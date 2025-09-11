@@ -27,7 +27,7 @@ Future<void> addDummyProducts() async {
 
   if (isFirstRun) {
     final products = [
-      Product(id: Uuid().v4(), name: 'Limpiador Multiusos', description: 'Limpia y desinfecta cualquier superficie.', price: 25.50, imageUrl: 'https://i.imgur.com/example1.png'),
+      Product(id: Uuid().v4(), name: 'Limpiador Multiusos', description: 'Limpia y desinfecta cualquier superficie.', price: 25.50, imageUrl: 'assets/images/product-placeholder.png'),
       Product(id: Uuid().v4(), name: 'Detergente para Ropa', description: 'Deja tu ropa limpia y con un aroma fresco.', price: 45.00, imageUrl: 'https://i.imgur.com/example2.png'),
       Product(id: Uuid().v4(), name: 'Lavavajillas Líquido', description: 'Arranca la grasa más difícil de tus platos.', price: 30.20, imageUrl: 'https://i.imgur.com/example3.png'),
       Product(id: Uuid().v4(), name: 'Suavizante de Telas', description: 'Ropa suave y perfumada por más tiempo.', price: 35.00, imageUrl: 'https://i.imgur.com/example4.png'),

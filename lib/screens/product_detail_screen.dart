@@ -30,15 +30,15 @@ class ProductDetailScreen extends StatelessWidget {
               width: double.infinity,
               child: Hero(
                 tag: product.id,
-                child: Image.network(
-                  product.imageUrl,
+                child: Image.asset(
+                  'assets/images/product-placeholder.png',
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
+                  /*errorBuilder: (context, error, stackTrace) {
                     return Container(
                       color: Colors.grey[200],
                       child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
                     );
-                  },
+                  },*/
                 ),
               ),
             ),

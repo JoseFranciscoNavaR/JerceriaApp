@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../models/product_model.dart';
-import '../providers/cart_provider.dart';
 import '../screens/product_detail_screen.dart';
 
 class ProductGridItem extends StatelessWidget {
@@ -35,7 +33,7 @@ class ProductGridItem extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(15.0)),
                   child: FadeInImage(
                     placeholder: const AssetImage('assets/images/product-placeholder.png'),
-                    image: NetworkImage(product.imageUrl),
+                    image: const AssetImage('assets/images/product-placeholder.png'),
                     fit: BoxFit.cover,
                     imageErrorBuilder: (context, error, stackTrace) {
                       return Container(
