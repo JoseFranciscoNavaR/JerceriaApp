@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../models/product_model.dart';
@@ -11,6 +12,15 @@ class AdminProductListScreen extends StatefulWidget {
 
 class _AdminProductListScreenState extends State<AdminProductListScreen> {
   final DatabaseService _databaseService = DatabaseService();
+  String _searchQuery = '';
+  String _sortOrder = 'name_asc';
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
 
   void _navigateToEditScreen(BuildContext context, {Product? product}) {
     Navigator.of(context).push(
@@ -18,12 +28,12 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
     );
   }
 
-  void _showDeleteConfirmationDialog(BuildContext context, Product product) {
+  void _showDisableConfirmationDialog(BuildContext context, Product product) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Confirmar Eliminación'),
-        content: Text('¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer.'),
+        title: Text('Confirmar Deshabilitación'),
+        content: Text('¿Estás seguro de que quieres deshabilitar este producto?'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: <Widget>[
           TextButton(
@@ -33,12 +43,13 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
             },
           ),
           TextButton(
-            child: Text('Sí, Eliminar', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            child: Text('Sí, Deshabilitar', style: TextStyle(color: Theme.of(context).colorScheme.error)),
             onPressed: () {
-              _databaseService.deleteProduct(product.id);
+              product.isAvailable = false;
+              _databaseService.updateProduct(product);
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Producto eliminado exitosamente'), backgroundColor: Colors.green),
+                SnackBar(content: Text('Producto deshabilitado exitosamente'), backgroundColor: Colors.orange),
               );
             },
           ),
@@ -57,97 +68,175 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: Theme.of(context).colorScheme.primary,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add_circle_outline),
-            onPressed: () => _navigateToEditScreen(context),
-          ),
-        ],
       ),
-      body: ValueListenableBuilder(
-        valueListenable: Hive.box<Product>('products').listenable(),
-        builder: (context, Box<Product> box, _) {
-          final products = box.values.toList().cast<Product>();
-          if (products.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.shopping_bag_outlined, size: 100, color: Colors.grey[300]),
-                  SizedBox(height: 20),
-                  Text(
-                    'No hay productos',
-                    style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    '¡Añade uno para empezar!',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[500]),
-                  ),
-                ],
-              ),
-            );
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(8.0),
-            itemCount: products.length,
-            itemBuilder: (ctx, index) {
-              final product = products[index];
-              return Card(
-                elevation: 2,
-                margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  leading: CircleAvatar(
-                    radius: 30,
-                    backgroundImage: product.imageUrl.isNotEmpty
-                        ? NetworkImage(product.imageUrl)
-                        : null,
-                    onBackgroundImageError: (_, __) {},
-                    child: product.imageUrl.isEmpty ? Icon(Icons.store, size: 30) : null,
-                    backgroundColor: Colors.grey[200],
-                  ),
-                  title: Text(
-                    product.name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      decoration: !product.isAvailable ? TextDecoration.lineThrough : null,
-                      color: !product.isAvailable ? Colors.grey : null,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Buscar productos...',
+                      prefixIcon: Icon(Icons.search, color: Colors.grey),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
-                  ),
-                  subtitle: Text('\$${product.price.toStringAsFixed(2)} / ${product.unit}'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Switch(
-                        value: product.isAvailable,
-                        onChanged: (value) {
-                          product.isAvailable = value;
-                          _databaseService.updateProduct(product);
-                        },
-                        activeColor: Theme.of(context).colorScheme.primary,
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.edit_outlined, color: Colors.grey[600]),
-                        onPressed: () => _navigateToEditScreen(context, product: product),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                        onPressed: () => _showDeleteConfirmationDialog(context, product),
-                      ),
-                    ],
+                    onChanged: (value) {
+                      if (_debounce?.isActive ?? false) _debounce!.cancel();
+                      _debounce = Timer(const Duration(milliseconds: 500), () {
+                        setState(() {
+                          _searchQuery = value;
+                        });
+                      });
+                    },
                   ),
                 ),
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        child: Icon(Icons.add, color: Colors.white),
-        onPressed: () => _navigateToEditScreen(context),
+                SizedBox(width: 10),
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    setState(() {
+                      _sortOrder = value;
+                    });
+                  },
+                  icon: Icon(Icons.sort, color: Colors.grey[600]),
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'name_asc',
+                      child: Text('Ordenar por nombre (A-Z)'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'name_desc',
+                      child: Text('Ordenar por nombre (Z-A)'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'price_asc',
+                      child: Text('Ordenar por precio (menor a mayor)'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'price_desc',
+                      child: Text('Ordenar por precio (mayor a menor)'),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: Icon(Icons.add_circle_outline, color: Theme.of(context).colorScheme.primary),
+                  onPressed: () => _navigateToEditScreen(context),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ValueListenableBuilder(
+              valueListenable: Hive.box<Product>('products').listenable(),
+              builder: (context, Box<Product> box, _) {
+                var products = box.values.toList().cast<Product>();
+
+                if (_searchQuery.isNotEmpty) {
+                  products = products.where((product) => product.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+                }
+
+                products.sort((a, b) {
+                  switch (_sortOrder) {
+                    case 'name_asc':
+                      return a.name.compareTo(b.name);
+                    case 'name_desc':
+                      return b.name.compareTo(a.name);
+                    case 'price_asc':
+                      return a.price.compareTo(b.price);
+                    case 'price_desc':
+                      return b.price.compareTo(a.price);
+                    default:
+                      return a.name.compareTo(b.name);
+                  }
+                });
+
+                if (products.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search_off, size: 100, color: Colors.grey[300]),
+                        SizedBox(height: 20),
+                        Text(
+                          'No se encontraron productos',
+                          style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
+                        ),
+                        if (_searchQuery.isNotEmpty)
+                          Text(
+                            'Intenta con otra búsqueda',
+                            style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+                          ),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(8.0),
+                  itemCount: products.length,
+                  itemBuilder: (ctx, index) {
+                    final product = products[index];
+                    return Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        leading: CircleAvatar(
+                          radius: 30,
+                          backgroundImage: product.imageUrl.isNotEmpty
+                              ? NetworkImage(product.imageUrl)
+                              : null,
+                          onBackgroundImageError: (_, __) {},
+                          child: product.imageUrl.isEmpty ? Icon(Icons.store, size: 30) : null,
+                          backgroundColor: Colors.grey[200],
+                        ),
+                        title: Text(
+                          product.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            decoration: !product.isAvailable ? TextDecoration.lineThrough : null,
+                            color: !product.isAvailable ? Colors.grey : null,
+                          ),
+                        ),
+                        subtitle: Text('\$${product.price.toStringAsFixed(2)} / ${product.unit}'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Switch(
+                              value: product.isAvailable,
+                              onChanged: (value) {
+                                product.isAvailable = value;
+                                _databaseService.updateProduct(product);
+                              },
+                              activeColor: Theme.of(context).colorScheme.primary,
+                              inactiveTrackColor: Colors.grey[300],
+                              inactiveThumbColor: Colors.grey[600],
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.edit_outlined, color: Colors.grey[600]),
+                              onPressed: () => _navigateToEditScreen(context, product: product),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                              onPressed: () => _showDisableConfirmationDialog(context, product),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

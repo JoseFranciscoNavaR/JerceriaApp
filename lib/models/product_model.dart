@@ -25,6 +25,12 @@ class Product extends HiveObject {
   @HiveField(6)
   String unit;
 
+  @HiveField(7)
+  String? brand; // Opcional
+
+  @HiveField(8)
+  String category;
+
   Product({
     required this.id,
     required this.name,
@@ -32,6 +38,8 @@ class Product extends HiveObject {
     required this.price,
     required this.imageUrl,
     this.isAvailable = true,
-    this.unit = 'Pieza',
+    this.unit = 'Pz',
+    this.brand,
+    required this.category,
   });
 }
