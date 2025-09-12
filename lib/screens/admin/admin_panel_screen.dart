@@ -1,109 +1,88 @@
-
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import '../../models/product_model.dart';
-import '../../services/database_service.dart';
-import './admin_edit_product_screen.dart';
+import '../home_screen.dart';
+import './admin_product_list_screen.dart';
 
-class AdminPanelScreen extends StatefulWidget {
-  @override
-  _AdminPanelScreenState createState() => _AdminPanelScreenState();
-}
-
-class _AdminPanelScreenState extends State<AdminPanelScreen> {
-  final DatabaseService _databaseService = DatabaseService();
-
-  void _navigateToEditScreen(BuildContext context, {Product? product}) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (ctx) => AdminEditProductScreen(product: product)),
-    );
-  }
-
-  void _deleteProduct(String productId) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Confirmar Eliminación'),
-        content: Text('¿Estás seguro de que quieres eliminar este producto?'),
-        actions: <Widget>[
-          TextButton(
-            child: Text('No'),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-            },
-          ),
-          TextButton(
-            child: Text('Sí'),
-            onPressed: () {
-              _databaseService.deleteProduct(productId);
-              Navigator.of(ctx).pop();
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
+class AdminPanelScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text('Panel de Administrador'),
+        title: Text('Panel de Administrador', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: Theme.of(context).colorScheme.primary,
+        automaticallyImplyLeading: false, // No muestra la flecha de regreso
         actions: [
           IconButton(
-            icon: Icon(Icons.add),
-            onPressed: () => _navigateToEditScreen(context),
+            icon: Icon(Icons.logout_outlined),
+            tooltip: 'Cerrar Sesión',
+            onPressed: () {
+              // Regresa a la pantalla de inicio y limpia el historial de navegación
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => HomeScreen()),
+                (Route<dynamic> route) => false,
+              );
+            },
           ),
         ],
       ),
-      body: ValueListenableBuilder(
-        valueListenable: Hive.box<Product>('products').listenable(),
-        builder: (context, Box<Product> box, _) {
-          final products = box.values.toList().cast<Product>();
-          if (products.isEmpty) {
-            return Center(
-              child: Text('No hay productos. ¡Añade uno!'),
-            );
-          }
-          return ListView.builder(
-            itemCount: products.length,
-            itemBuilder: (ctx, index) {
-              final product = products[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  // Lógica de imagen de placeholder mejorada
-                  backgroundImage: product.imageUrl.isNotEmpty
-                      ? NetworkImage(product.imageUrl)
-                      : null,
-                  onBackgroundImageError: (_, __) {},
-                  child: product.imageUrl.isEmpty ? Icon(Icons.store) : null,
-                ),
-                title: Text(product.name),
-                subtitle: Text('\$${product.price.toStringAsFixed(2)}'),
-                trailing: Container(
-                  width: 100,
-                  child: Row(
-                    children: <Widget>[
-                      IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () => _navigateToEditScreen(context, product: product),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        color: Theme.of(context).colorScheme.error,
-                        onPressed: () => _deleteProduct(product.id),
-                      ),
-                    ],
-                  ),
-                ),
+      body: ListView(
+        padding: const EdgeInsets.all(16.0),
+        children: [
+          _buildAdminCard(
+            context,
+            icon: Icons.store_outlined,
+            title: 'Administrar Productos',
+            subtitle: 'Editar, agregar o eliminar productos',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (ctx) => AdminProductListScreen()),
               );
             },
-          );
-        },
+          ),
+          _buildAdminCard(
+            context,
+            icon: Icons.category_outlined,
+            title: 'Administrar Categorías',
+            subtitle: 'Organizar productos en categorías',
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Funcionalidad de categorías próximamente.')),
+              );
+            },
+          ),
+          _buildAdminCard(
+            context,
+            icon: Icons.receipt_long_outlined,
+            title: 'Administrar Órdenes',
+            subtitle: 'Ver y gestionar los pedidos de los clientes',
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Funcionalidad de órdenes próximamente.')),
+              );
+            },
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.add),
-        onPressed: () => _navigateToEditScreen(context),
+    );
+  }
+
+  Widget _buildAdminCard(BuildContext context, {required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16.0),
+        leading: Icon(icon, size: 40, color: Theme.of(context).colorScheme.primary),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        subtitle: Text(subtitle, style: TextStyle(color: Colors.grey[600])),
+        trailing: Icon(Icons.arrow_forward_ios, color: Colors.grey[400]),
+        onTap: onTap,
       ),
     );
   }
