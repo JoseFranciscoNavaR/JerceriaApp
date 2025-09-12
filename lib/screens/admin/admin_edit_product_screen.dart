@@ -173,6 +173,8 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                       });
                     },
                     activeColor: Theme.of(context).colorScheme.primary,
+                    inactiveTrackColor: Colors.grey[300],
+                    inactiveThumbColor: Colors.grey[600],
                     contentPadding: EdgeInsets.zero,
                   ),
                   SwitchListTile(
@@ -184,6 +186,8 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                       });
                     },
                     activeColor: Theme.of(context).colorScheme.primary,
+                    inactiveTrackColor: Colors.grey[300],
+                    inactiveThumbColor: Colors.grey[600],
                     contentPadding: EdgeInsets.zero,
                   ),
                   SizedBox(height: 30),

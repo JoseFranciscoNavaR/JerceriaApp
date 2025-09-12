@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../home_screen.dart';
 import './admin_product_list_screen.dart';
+import './admin_category_list_screen.dart'; // Import the new screen
 
 class AdminPanelScreen extends StatelessWidget {
   @override
@@ -48,8 +49,9 @@ class AdminPanelScreen extends StatelessWidget {
             title: 'Administrar Categorías',
             subtitle: 'Organizar productos en categorías',
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Funcionalidad de categorías próximamente.')),
+              // Navigate to the new category list screen
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (ctx) => AdminCategoryListScreen()),
               );
             },
           ),

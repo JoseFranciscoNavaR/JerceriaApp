@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import 'models/product_model.dart';
+import 'models/category_model.dart'; // Import category model
 import 'screens/home_screen.dart';
 import 'providers/cart_provider.dart';
 
@@ -11,17 +12,38 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
 
+  // Register adapters
   Hive.registerAdapter(ProductAdapter());
+  Hive.registerAdapter(CategoryAdapter());
 
-  // To prevent data corruption errors during development after model changes,
-  // it's best to delete the box before opening it.
+  // Clear boxes for fresh start in development
   await Hive.deleteBoxFromDisk('products');
-  await Hive.openBox<Product>('products');
+  await Hive.deleteBoxFromDisk('categories');
 
-  // Add fresh dummy products on every run to reflect model changes.
+  // Open boxes
+  await Hive.openBox<Product>('products');
+  await Hive.openBox<Category>('categories');
+
+  // Add dummy data
   await addDummyProducts();
+  await addDummyCategories();
 
   runApp(MyApp());
+}
+
+Future<void> addDummyCategories() async {
+  final categoryBox = Hive.box<Category>('categories');
+  final uuid = Uuid();
+  final categories = [
+    Category(id: uuid.v4(), name: 'Limpieza Hogar'),
+    Category(id: uuid.v4(), name: 'Cuidado Ropa'),
+    Category(id: uuid.v4(), name: 'Cuidado Personal'),
+    Category(id: uuid.v4(), name: 'Automotriz', isAvailable: false),
+  ];
+
+  for (var category in categories) {
+    await categoryBox.put(category.id, category);
+  }
 }
 
 Future<void> addDummyProducts() async {
