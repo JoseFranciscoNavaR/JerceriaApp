@@ -29,7 +29,7 @@ class Product extends HiveObject {
   String? brand; // Opcional
 
   @HiveField(8)
-  String category;
+  String categoryId;
 
   Product({
     required this.id,
@@ -40,6 +40,6 @@ class Product extends HiveObject {
     this.isAvailable = true,
     this.unit = 'Pz',
     this.brand,
-    required this.category,
+    required this.categoryId,
   });
 }

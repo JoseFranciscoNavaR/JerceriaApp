@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/product_model.dart';
+import '../../models/category_model.dart';
 import '../../services/database_service.dart';
 
 class AdminEditProductScreen extends StatefulWidget {
@@ -19,22 +20,24 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
 
   final _nameController = TextEditingController();
   final _brandController = TextEditingController();
-  final _categoryController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _imageUrlController = TextEditingController();
 
-  bool _isSoldByVolume = false; // false for Pz, true for Lt
+  String? _selectedCategoryId;
+  List<Category> _categories = [];
+  bool _isSoldByVolume = false;
   bool _isAvailable = true;
   var _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _loadCategories();
     if (widget.product != null) {
       _nameController.text = widget.product!.name;
       _brandController.text = widget.product!.brand ?? '';
-      _categoryController.text = widget.product!.category;
+      _selectedCategoryId = widget.product!.categoryId;
       _descriptionController.text = widget.product!.description;
       _priceController.text = widget.product!.price.toString();
       _imageUrlController.text = widget.product!.imageUrl;
@@ -44,11 +47,20 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
     _imageUrlController.addListener(_updateImagePreview);
   }
 
+  Future<void> _loadCategories() async {
+    final categories = _databaseService.getCategories();
+    setState(() {
+      _categories = categories;
+      if (widget.product == null && _categories.isNotEmpty) {
+        _selectedCategoryId = _categories.first.id;
+      }
+    });
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
     _brandController.dispose();
-    _categoryController.dispose();
     _descriptionController.dispose();
     _priceController.dispose();
     _imageUrlController.removeListener(_updateImagePreview);
@@ -76,7 +88,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
         id: widget.product?.id ?? _uuid.v4(),
         name: _nameController.text,
         brand: _brandController.text.isNotEmpty ? _brandController.text : null,
-        category: _categoryController.text,
+        categoryId: _selectedCategoryId!,
         description: _descriptionController.text,
         price: double.parse(_priceController.text),
         imageUrl: _imageUrlController.text,
@@ -143,9 +155,9 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                   SizedBox(height: 20),
                   _buildTextFormField(controller: _nameController, labelText: 'Nombre del Producto', validator: (v) => v!.isEmpty ? 'Este campo es obligatorio.' : null),
                   SizedBox(height: 20),
-                  _buildTextFormField(controller: _brandController, labelText: 'Marca (Opcional)', validator: (v) => null), // Validation is optional
+                  _buildTextFormField(controller: _brandController, labelText: 'Marca (Opcional)', validator: (v) => null),
                   SizedBox(height: 20),
-                  _buildTextFormField(controller: _categoryController, labelText: 'Categoría', validator: (v) => v!.isEmpty ? 'Este campo es obligatorio.' : null),
+                  _buildCategoryDropdown(),
                   SizedBox(height: 20),
                   _buildTextFormField(controller: _descriptionController, labelText: 'Descripción', maxLines: 3, validator: (v) => v!.isEmpty ? 'Este campo es obligatorio.' : null),
                   SizedBox(height: 20),
@@ -210,6 +222,38 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCategoryDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedCategoryId,
+      decoration: InputDecoration(
+        labelText: 'Categoría',
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.0),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+      ),
+      items: _categories.map((Category category) {
+        return DropdownMenuItem<String>(
+          value: category.id,
+          child: Text(category.name),
+        );
+      }).toList(),
+      onChanged: (newValue) {
+        setState(() {
+          _selectedCategoryId = newValue;
+        });
+      },
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Por favor, seleccione una categoría.';
+        }
+        return null;
+      },
     );
   }
 

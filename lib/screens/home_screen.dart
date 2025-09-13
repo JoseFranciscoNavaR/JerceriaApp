@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
+import '../models/category_model.dart';
 import '../models/product_model.dart';
 import '../providers/cart_provider.dart';
 import '../providers/navigation_provider.dart';
@@ -113,6 +114,7 @@ class _ProductsGridState extends State<ProductsGrid> {
   String _searchQuery = '';
   String _sortOrder = 'A-Z';
   int _crossAxisCount = 2;
+  String? _selectedCategoryId;
   Timer? _debounce;
 
   @override
@@ -224,11 +226,57 @@ class _ProductsGridState extends State<ProductsGrid> {
             ],
           ),
         ),
+        SizedBox(
+          height: 50,
+          child: ValueListenableBuilder(
+            valueListenable: Hive.box<Category>('categories').listenable(),
+            builder: (context, Box<Category> box, _) {
+              final categories = [Category(id: 'all', name: 'Todos')]..addAll(box.values.where((c) => c.isAvailable));
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                itemCount: categories.length,
+                itemBuilder: (context, index) {
+                  final category = categories[index];
+                  final isSelected = _selectedCategoryId == category.id || (_selectedCategoryId == null && category.id == 'all');
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: ChoiceChip(
+                      label: Text(category.name),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedCategoryId = category.id == 'all' ? null : category.id;
+                          }
+                        });
+                      },
+                      selectedColor: Theme.of(context).colorScheme.primary,
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black,
+                      ),
+                      backgroundColor: Colors.white,
+                      shape: StadiumBorder(
+                        side: BorderSide(
+                          color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey[300]!,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
         Expanded(
           child: ValueListenableBuilder(
             valueListenable: Hive.box<Product>('products').listenable(),
             builder: (context, Box<Product> box, _) {
               var products = box.values.toList().cast<Product>();
+
+              if (_selectedCategoryId != null) {
+                products = products.where((p) => p.categoryId == _selectedCategoryId).toList();
+              }
 
               if (_searchQuery.isNotEmpty) {
                 products = products

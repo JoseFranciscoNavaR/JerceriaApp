@@ -25,7 +25,7 @@ class ProductAdapter extends TypeAdapter<Product> {
       isAvailable: fields[5] as bool,
       unit: fields[6] as String,
       brand: fields[7] as String?,
-      category: fields[8] as String,
+      categoryId: fields[8] as String,
     );
   }
 
@@ -50,7 +50,7 @@ class ProductAdapter extends TypeAdapter<Product> {
       ..writeByte(7)
       ..write(obj.brand)
       ..writeByte(8)
-      ..write(obj.category);
+      ..write(obj.categoryId);
   }
 
   @override

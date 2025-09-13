@@ -1,9 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:badges/badges.dart' as badges;
-
 import '../models/product_model.dart';
 import '../providers/cart_provider.dart';
 import '../providers/navigation_provider.dart';
@@ -196,7 +194,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
               textStyle: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            child: Text('Añadir por \$${total.toStringAsFixed(2)}'),
+            child: Text('Añadir por MX\$${total.toStringAsFixed(2)}'),
           ),
         ],
       ),

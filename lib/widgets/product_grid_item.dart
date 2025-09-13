@@ -33,7 +33,7 @@ class ProductGridItem extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(15.0)),
                   child: FadeInImage(
                     placeholder: const AssetImage('assets/images/product-placeholder.png'),
-                    image: const AssetImage('assets/images/product-placeholder.png'),
+                    image: NetworkImage(product.imageUrl),
                     fit: BoxFit.cover,
                     imageErrorBuilder: (context, error, stackTrace) {
                       return Container(
@@ -56,17 +56,27 @@ class ProductGridItem extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '\$${product.price.toStringAsFixed(2)}',
+                    'MX\$${product.price.toStringAsFixed(2)}',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    product.description,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
