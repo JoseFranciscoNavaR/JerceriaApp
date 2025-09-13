@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import '../models/product_model.dart';
 import '../providers/cart_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../screens/admin/admin_login_screen.dart';
 import '../widgets/product_grid_item.dart';
 import './cart_screen.dart';
@@ -16,49 +17,40 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
-
-  static final List<Widget> _widgetOptions = <Widget>[
-    ProductsGrid(),
-    CartScreen(),
-    OrderHistoryScreen(),
-  ];
-
-  static const List<String> _widgetTitles = <String>[
-    'Jarcería',
-    'Carrito',
-    'Historial',
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final navigationProvider = Provider.of<NavigationProvider>(context);
+
+    final List<Widget> _widgetOptions = <Widget>[
+      ProductsGrid(),
+      CartScreen(),
+      OrderHistoryScreen(),
+    ];
+
+    final List<String> _widgetTitles = <String>[
+      'Jarcería',
+      'Mi Carrito',
+      'Historial de Órdenes',
+    ];
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(_widgetTitles[_selectedIndex], style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(_widgetTitles[navigationProvider.selectedIndex], style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: Theme.of(context).colorScheme.primary,
         actions: [
-          if (_selectedIndex != 1)
+          if (navigationProvider.selectedIndex != 1)
             Consumer<CartProvider>(
-              builder: (_, cart, __) => badges.Badge(
-                position: badges.BadgePosition.topEnd(top: 0, end: 3),
-                badgeContent: Text(
-                  cart.itemCount.toString(),
-                  style: const TextStyle(color: Colors.white),
-                ),
-                showBadge: cart.itemCount > 0,
+              builder: (_, cart, ch) => badges.Badge(
+                badgeContent: Text(cart.totalQuantity.round().toString(), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                showBadge: cart.totalQuantity > 0,
+                position: badges.BadgePosition.topEnd(top: 0, end: 0),
                 child: IconButton(
                   icon: const Icon(Icons.shopping_cart_outlined),
                   onPressed: () {
-                    _onItemTapped(1);
+                    navigationProvider.setIndex(1);
                   },
                 ),
               ),
@@ -72,31 +64,39 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: IndexedStack(
-        index: _selectedIndex,
+        index: navigationProvider.selectedIndex,
         children: _widgetOptions,
       ),
       backgroundColor: Colors.grey[50],
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
+        items: <BottomNavigationBarItem>[
+          const BottomNavigationBarItem(
             icon: Icon(Icons.store_outlined),
             activeIcon: Icon(Icons.store),
             label: 'Productos',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart_outlined),
-            activeIcon: Icon(Icons.shopping_cart),
+            icon: Consumer<CartProvider>(
+              builder: (_, cart, ch) => badges.Badge(
+                badgeContent: Text(cart.totalQuantity.round().toString(), style: TextStyle(color: Colors.white, fontSize: 12)),
+                showBadge: cart.totalQuantity > 0,
+                position: badges.BadgePosition.topEnd(top: -8, end: -8),
+                child: ch!,
+              ),
+              child: const Icon(Icons.shopping_cart_outlined),
+            ),
+            activeIcon: const Icon(Icons.shopping_cart),
             label: 'Carrito',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.history_outlined),
             activeIcon: Icon(Icons.history),
             label: 'Historial',
           ),
         ],
-        currentIndex: _selectedIndex,
+        currentIndex: navigationProvider.selectedIndex,
         selectedItemColor: Theme.of(context).colorScheme.primary,
-        onTap: _onItemTapped,
+        onTap: (index) => navigationProvider.setIndex(index),
         showUnselectedLabels: true,
         unselectedItemColor: Colors.grey[600],
       ),

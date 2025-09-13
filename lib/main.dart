@@ -7,6 +7,7 @@ import 'models/product_model.dart';
 import 'models/category_model.dart'; // Import category model
 import 'screens/home_screen.dart';
 import 'providers/cart_provider.dart';
+import 'providers/navigation_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -71,8 +72,11 @@ Future<void> addDummyProducts() async {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (ctx) => CartProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (ctx) => CartProvider()),
+        ChangeNotifierProvider(create: (ctx) => NavigationProvider()),
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Jarcería App',

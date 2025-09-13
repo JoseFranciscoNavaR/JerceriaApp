@@ -1,14 +1,13 @@
-
 import 'package:flutter/foundation.dart';
 import '../models/product_model.dart';
 
-// Modelo para un ítem dentro del carrito
 class CartItem {
-  final String id; // ID único para el ítem del carrito (ej: producto.id)
+  final String id;
   final String name;
-  final int quantity;
+  final double quantity;
   final double price;
   final String imageUrl;
+  final String unit;
 
   CartItem({
     required this.id,
@@ -16,36 +15,38 @@ class CartItem {
     required this.quantity,
     required this.price,
     required this.imageUrl,
+    required this.unit,
   });
 
-  // Método para crear una copia con una cantidad actualizada
-  CartItem copyWith({int? quantity}) {
+  CartItem copyWith({double? quantity}) {
     return CartItem(
       id: id,
       name: name,
       quantity: quantity ?? this.quantity,
       price: price,
       imageUrl: imageUrl,
+      unit: unit,
     );
   }
 }
 
-// El "cerebro" del carrito
 class CartProvider with ChangeNotifier {
   Map<String, CartItem> _items = {};
 
   Map<String, CartItem> get items => {..._items};
 
-  // CORRECCIÓN: Contar el número total de artículos, no solo los tipos de producto.
   int get itemCount {
-    int total = 0;
-    _items.forEach((key, cartItem) {
-      total += cartItem.quantity;
-    });
-    return total;
+    return _items.length;
   }
 
-  // Suma total del precio de los productos en el carrito
+  double get totalQuantity {
+      double total = 0;
+      _items.forEach((key, cartItem) {
+        total += cartItem.quantity;
+      });
+      return total;
+  }
+
   double get totalAmount {
     var total = 0.0;
     _items.forEach((key, cartItem) {
@@ -54,57 +55,64 @@ class CartProvider with ChangeNotifier {
     return total;
   }
 
-  // Método para añadir un producto al carrito
-  void addItem(Product product) {
+  void addItem(Product product, double quantity) {
+    if (quantity <= 0) return;
+
     if (_items.containsKey(product.id)) {
-      // Si el producto ya está, solo aumenta la cantidad
       _items.update(
         product.id,
         (existingCartItem) => existingCartItem.copyWith(
-          quantity: existingCartItem.quantity + 1,
+          quantity: existingCartItem.quantity + quantity,
         ),
       );
     } else {
-      // Si es un producto nuevo, lo añade al mapa
       _items.putIfAbsent(
         product.id,
         () => CartItem(
-          id: DateTime.now().toString(), // ID único para el ítem
+          id: product.id,
           name: product.name,
           price: product.price,
-          quantity: 1,
+          quantity: quantity,
           imageUrl: product.imageUrl,
+          unit: product.unit,
         ),
       );
     }
-    notifyListeners(); // Notifica a los widgets que están escuchando
+    notifyListeners();
   }
 
-  // Método para remover un solo ítem (si la cantidad es > 1)
   void removeSingleItem(String productId) {
     if (!_items.containsKey(productId)) return;
 
-    if (_items[productId]!.quantity > 1) {
-      _items.update(
-        productId,
-        (existingCartItem) => existingCartItem.copyWith(
-          quantity: existingCartItem.quantity - 1,
-        ),
-      );
+    final existingItem = _items[productId]!;
+    final isVolumetric = existingItem.unit == 'Lt';
+    final double decrementAmount = isVolumetric ? 0.1 : 1.0;
+    final double newQuantity = existingItem.quantity - decrementAmount;
+
+    if (newQuantity > 0.001) { // Use tolerance for float comparison
+      _items.update(productId, (item) => item.copyWith(quantity: newQuantity));
     } else {
-      // Si solo hay uno, elimina el producto del mapa
       _items.remove(productId);
     }
     notifyListeners();
   }
 
-  // Método para eliminar completamente un producto del carrito
+  void updateItemQuantity(String productId, double newQuantity) {
+    if (!_items.containsKey(productId)) return;
+
+    if (newQuantity > 0) {
+      _items.update(productId, (item) => item.copyWith(quantity: newQuantity));
+    } else {
+      _items.remove(productId);
+    }
+    notifyListeners();
+  }
+
   void removeItem(String productId) {
     _items.remove(productId);
     notifyListeners();
   }
 
-  // Método para limpiar todo el carrito
   void clear() {
     _items = {};
     notifyListeners();
