@@ -136,8 +136,8 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
             child: ValueListenableBuilder(
               valueListenable: Hive.box<Category>('categories').listenable(),
               builder: (context, Box<Category> box, _) {
-                var categories = box.values.where((c) => c != null).toList().cast<Category>();
-
+                //var categories = box.values.where((c) => c != null).toList().cast<Category>();
+                var categories = box.values.whereType<Category>().toList();
                 if (_searchQuery.isNotEmpty) {
                   categories = categories.where((category) => category.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
                 }
