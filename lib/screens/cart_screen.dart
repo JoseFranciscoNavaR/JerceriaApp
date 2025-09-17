@@ -78,7 +78,7 @@ class CartScreen extends StatelessWidget {
                         );
                         // cart.clear();
                       },
-                      child: Text('COMPRAR'),
+                      child: const Text('COMPRAR'),
                     )
                   ],
                 ),
@@ -125,7 +125,7 @@ class CartListItem extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
-        child: Icon(Icons.delete, color: Colors.white, size: 30),
+        child: const Icon(Icons.delete, color: Colors.white, size: 30),
       ),
       direction: DismissDirection.endToStart,
       confirmDismiss: (direction) {

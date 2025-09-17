@@ -24,7 +24,7 @@ class AdminPanelScreen extends StatelessWidget {
             onPressed: () {
               // Regresa a la pantalla de inicio y limpia el historial de navegación
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => HomeScreen()),
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
                 (Route<dynamic> route) => false,
               );
             },
@@ -41,7 +41,7 @@ class AdminPanelScreen extends StatelessWidget {
             subtitle: 'Editar, agregar o eliminar productos',
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => AdminProductListScreen()),
+                MaterialPageRoute(builder: (ctx) => const AdminProductListScreen()),
               );
             },
           ),
@@ -53,7 +53,7 @@ class AdminPanelScreen extends StatelessWidget {
             onTap: () {
               // Navigate to the new category list screen
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (ctx) => AdminCategoryListScreen()),
+                MaterialPageRoute(builder: (ctx) => const AdminCategoryListScreen()),
               );
             },
           ),

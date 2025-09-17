@@ -21,7 +21,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
       if (_username == 'admin' && _password == 'admin') {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => AdminPanelScreen()),
+          MaterialPageRoute(builder: (context) => const AdminPanelScreen()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -134,7 +134,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          child: Text(
+                          child: const Text(
                             'Iniciar Sesión',
                             style: TextStyle(fontSize: 18, color: Colors.white),
                           ),

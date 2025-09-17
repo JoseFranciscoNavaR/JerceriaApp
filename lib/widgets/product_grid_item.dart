@@ -9,11 +9,14 @@ class ProductGridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String unitText = product.unit == 'Lt' ? 'x Lt' : 'x Pz';
+
     return Card(
       elevation: 2.0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15.0),
       ),
+      clipBehavior: Clip.antiAlias, // Ensures the badge respects the card's border radius
       child: InkWell(
         borderRadius: BorderRadius.circular(15.0),
         onTap: () {
@@ -27,22 +30,29 @@ class ProductGridItem extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: Hero(
-                tag: product.id,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(15.0)),
-                  child: FadeInImage(
-                    placeholder: const AssetImage('assets/images/product-placeholder.png'),
-                    image: NetworkImage(product.imageUrl),
-                    fit: BoxFit.cover,
-                    imageErrorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
-                      );
-                    },
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Hero(
+                    tag: product.id,
+                    child: FadeInImage(
+                      placeholder: const AssetImage('assets/images/product-placeholder.png'),
+                      image: NetworkImage(product.imageUrl),
+                      fit: BoxFit.cover,
+                      imageErrorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                        );
+                      },
+                    ),
                   ),
-                ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: _buildUnitBadge(context, unitText),
+                  ),
+                ],
               ),
             ),
             Padding(
@@ -61,7 +71,7 @@ class ProductGridItem extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'MX\$${product.price.toStringAsFixed(2)}',
+                    'MX\$${product.price.toStringAsFixed(2)} $unitText',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
@@ -82,6 +92,24 @@ class ProductGridItem extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUnitBadge(BuildContext context, String unitText) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        unitText,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

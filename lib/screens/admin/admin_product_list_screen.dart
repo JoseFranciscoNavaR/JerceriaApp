@@ -197,7 +197,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                               : null,
                           onBackgroundImageError: (_, __) {},
                           backgroundColor: Colors.grey[200],
-                          child: product.imageUrl.isEmpty ? Icon(Icons.store, size: 30) : null,
+                          child: product.imageUrl.isEmpty ? const Icon(Icons.store, size: 30) : null,
                         ),
                         title: Text(
                           product.name,

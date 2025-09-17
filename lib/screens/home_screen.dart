@@ -25,9 +25,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final navigationProvider = Provider.of<NavigationProvider>(context);
 
     final List<Widget> widgetOptions = <Widget>[
-      ProductsGrid(),
-      CartScreen(),
-      OrderHistoryScreen(),
+      const ProductsGrid(),
+      const CartScreen(),
+      const OrderHistoryScreen(),
     ];
 
     final List<String> widgetTitles = <String>[
@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.admin_panel_settings_outlined),
             onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => AdminLoginScreen()));
+              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const AdminLoginScreen()));
             },
           ),
         ],

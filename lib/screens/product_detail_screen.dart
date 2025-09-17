@@ -84,6 +84,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           _buildFloatingActions(context),
         ],
       ),
+      bottomNavigationBar: _buildResponsiveBottomActionBar(context),
     );
   }
 
@@ -136,7 +137,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ],
                 ),
               ),
-              _buildBottomActionBar(context),
             ],
           ),
         );
@@ -233,7 +233,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'MXN \$${widget.product.price.toStringAsFixed(2)}',
+          'MX\$${widget.product.price.toStringAsFixed(2)}',
           style: theme.textTheme.headlineSmall?.copyWith(
             color: theme.primaryColor,
             fontWeight: FontWeight.bold,
@@ -269,7 +269,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  Widget _buildBottomActionBar(BuildContext context) {
+  Widget _buildResponsiveBottomActionBar(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 400) {
+          return _buildCompactBottomActionBar(context);
+        } else {
+          return _buildWideBottomActionBar(context);
+        }
+      },
+    );
+  }
+
+  Widget _buildWideBottomActionBar(BuildContext context) {
     final theme = Theme.of(context);
     final total = _quantity * widget.product.price;
     final String unitText;
@@ -305,6 +317,55 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
             icon: const Icon(Icons.add_shopping_cart, size: 20),
             label: Text('Añadir (MX\$${total.toStringAsFixed(2)})'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactBottomActionBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final total = _quantity * widget.product.price;
+    final String unitText;
+    if (_isVolumetric) {
+      unitText = 'Litros';
+    } else {
+      unitText = (_quantity == 1.0) ? 'Pieza' : 'Piezas';
+    }
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(24, 16, 24, 16 + MediaQuery.of(context).padding.bottom),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+               _buildQuantitySelector(theme),
+                Text(
+                  unitText,
+                  style: theme.textTheme.titleSmall?.copyWith(color: Colors.grey[700]),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _addToCart,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                backgroundColor: theme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+              ),
+              icon: const Icon(Icons.add_shopping_cart, size: 20),
+              label: Text('Añadir (MX\$${total.toStringAsFixed(2)})'),
+            ),
           ),
         ],
       ),

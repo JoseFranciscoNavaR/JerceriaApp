@@ -29,7 +29,7 @@ void main() async {
   await addDummyCategories();
   await addDummyProducts();
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 Future<void> addDummyCategories() async {
@@ -94,7 +94,7 @@ class MyApp extends StatelessWidget {
           ),
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
-        home: HomeScreen(),
+        home: const HomeScreen(),
         routes: const {},
       ),
     );
