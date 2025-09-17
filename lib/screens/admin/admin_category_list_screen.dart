@@ -6,6 +6,8 @@ import 'package:jarceria_app/services/database_service.dart';
 import './admin_edit_category_screen.dart';
 
 class AdminCategoryListScreen extends StatefulWidget {
+  const AdminCategoryListScreen({Key? key}) : super(key: key);
+
   @override
   _AdminCategoryListScreenState createState() => _AdminCategoryListScreenState();
 }
@@ -32,12 +34,12 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Confirmar Deshabilitación'),
-        content: Text('¿Estás seguro de que quieres deshabilitar esta categoría? Los productos asociados no serán visibles para los clientes.'),
+        title: const Text('Confirmar Deshabilitación'),
+        content: const Text('¿Estás seguro de que quieres deshabilitar esta categoría? Los productos asociados no serán visibles para los clientes.'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: <Widget>[
           TextButton(
-            child: Text('Cancelar'),
+            child: const Text('Cancelar'),
             onPressed: () {
               Navigator.of(ctx).pop();
             },
@@ -48,7 +50,7 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
               _databaseService.updateCategoryAvailability(category.id, false);
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
+                const SnackBar(
                   content: Text('Categoría deshabilitada.'),
                   backgroundColor: Colors.orangeAccent,
                   behavior: SnackBarBehavior.floating,
@@ -68,7 +70,7 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text('Administrar Categorías', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Administrar Categorías', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -84,7 +86,7 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Buscar categorías...',
-                      prefixIcon: Icon(Icons.search, color: Colors.grey),
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -102,7 +104,7 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
                     },
                   ),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 PopupMenuButton<String>(
                   onSelected: (value) {
                     setState(() {
@@ -164,7 +166,7 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.category_outlined, size: 100, color: Colors.grey[300]),
-                        SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         Text(
                           _searchQuery.isEmpty ? 'No hay categorías' : 'No se encontraron categorías',
                           style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
@@ -180,7 +182,7 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
                 }
 
                 return ListView.builder(
-                  key: PageStorageKey<String>('category_list'), // Preserve scroll position
+                  key: const PageStorageKey<String>('category_list'), // Preserve scroll position
                   padding: const EdgeInsets.all(8.0),
                   itemCount: categories.length,
                   itemBuilder: (ctx, index) {

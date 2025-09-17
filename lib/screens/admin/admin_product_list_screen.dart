@@ -6,6 +6,8 @@ import '../../services/database_service.dart';
 import './admin_edit_product_screen.dart';
 
 class AdminProductListScreen extends StatefulWidget {
+  const AdminProductListScreen({Key? key}) : super(key: key);
+
   @override
   _AdminProductListScreenState createState() => _AdminProductListScreenState();
 }
@@ -32,12 +34,12 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Confirmar Deshabilitación'),
-        content: Text('¿Estás seguro de que quieres deshabilitar este producto?'),
+        title: const Text('Confirmar Deshabilitación'),
+        content: const Text('¿Estás seguro de que quieres deshabilitar este producto?'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: <Widget>[
           TextButton(
-            child: Text('No'),
+            child: const Text('No'),
             onPressed: () {
               Navigator.of(ctx).pop();
             },
@@ -49,7 +51,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
               _databaseService.updateProduct(product);
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Producto deshabilitado exitosamente'), backgroundColor: Colors.orange),
+                const SnackBar(content: Text('Producto deshabilitado exitosamente'), backgroundColor: Colors.orange),
               );
             },
           ),
@@ -63,7 +65,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text('Administrar Productos', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Administrar Productos', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -79,7 +81,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Buscar productos...',
-                      prefixIcon: Icon(Icons.search, color: Colors.grey),
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -97,7 +99,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                     },
                   ),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 PopupMenuButton<String>(
                   onSelected: (value) {
                     setState(() {
@@ -162,7 +164,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.search_off, size: 100, color: Colors.grey[300]),
-                        SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         Text(
                           'No se encontraron productos',
                           style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
@@ -194,8 +196,8 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                               ? NetworkImage(product.imageUrl)
                               : null,
                           onBackgroundImageError: (_, __) {},
-                          child: product.imageUrl.isEmpty ? Icon(Icons.store, size: 30) : null,
                           backgroundColor: Colors.grey[200],
+                          child: product.imageUrl.isEmpty ? Icon(Icons.store, size: 30) : null,
                         ),
                         title: Text(
                           product.name,

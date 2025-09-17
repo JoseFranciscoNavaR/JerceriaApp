@@ -38,24 +38,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void _addToCart() {
     final cart = Provider.of<CartProvider>(context, listen: false);
     if (_quantity > 0) {
-      // CORRECTED: Pass both product and quantity to the provider
       cart.addItem(widget.product, _quantity);
 
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('¡Añadido al carrito!'),
-          duration: Duration(seconds: 3),
+          content: const Text('¡Añadido al carrito!'),
+          duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.fromLTRB(24, 0, 24, 110), // Adjust for bottom bar
+          margin: const EdgeInsets.fromLTRB(24, 0, 24, 110),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           action: SnackBarAction(
             label: 'VER CARRITO',
             textColor: Theme.of(context).colorScheme.secondary,
             onPressed: () {
-              // Navigate to cart screen using the navigation provider
               Provider.of<NavigationProvider>(context, listen: false).setIndex(1);
-              Navigator.of(context).pop(); // Go back from detail screen
+              Navigator.of(context).popUntil((route) => route.isFirst);
             },
           ),
         ),
@@ -79,122 +77,234 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(context),
-          _buildProductInfo(),
+      body: Stack(
+        children: [
+          _buildBackgroundImage(context),
+          _buildDraggableSheet(context),
+          _buildFloatingActions(context),
         ],
       ),
-      bottomNavigationBar: _buildBottomActionBar(context),
     );
   }
 
-  SliverAppBar _buildSliverAppBar(BuildContext context) {
-    final theme = Theme.of(context);
-    return SliverAppBar(
-      expandedHeight: 400.0,
-      backgroundColor: Colors.white,
-      elevation: 0,
-      pinned: true,
-      foregroundColor: Colors.black87,
-      surfaceTintColor: Colors.white,
-      actions: [_buildCartIcon(context)],
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.symmetric(horizontal: 56, vertical: 12),
-        centerTitle: false,
-        title: Text(
-          widget.product.name,
-          style: theme.textTheme.titleLarge?.copyWith(color: Colors.black87, fontWeight: FontWeight.bold),
-        ),
-        background: Hero(
-          tag: widget.product.id,
-          child: Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: NetworkImage(widget.product.imageUrl),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.15), BlendMode.darken),
-                onError: (_, __) {},
-              ),
-            ),
-          ),
+  Widget _buildBackgroundImage(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    return Positioned.fill(
+      bottom: screenHeight * 0.45, // Show about 55% of the image
+      child: Hero(
+        tag: widget.product.id,
+        child: Image.network(
+          widget.product.imageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) =>
+              const Icon(Icons.broken_image, size: 150, color: Colors.grey),
         ),
       ),
     );
   }
 
-  Widget _buildProductInfo() {
-    final theme = Theme.of(context);
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 150), // Bottom padding for content
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (widget.product.brand != null && widget.product.brand!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Text(
-                  widget.product.brand!.toUpperCase(),
-                  style: theme.textTheme.labelMedium?.copyWith(color: Colors.grey[600], letterSpacing: 1.5),
+  Widget _buildDraggableSheet(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6, // Start at 60% of the screen
+      minChildSize: 0.6,
+      maxChildSize: 0.9, // Can be dragged up to 90%
+      builder: (BuildContext context, ScrollController scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(32),
+              topRight: Radius.circular(32),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10,
+                offset: Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildDragHandle(),
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  children: [
+                    _buildProductInfo(context),
+                  ],
                 ),
               ),
-            Text(
-              widget.product.description,
-              style: theme.textTheme.bodyLarge?.copyWith(color: Colors.black54, height: 1.7),
-            ),
-          ],
-        ),
+              _buildBottomActionBar(context),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDragHandle() {
+    return Container(
+      width: 40,
+      height: 5,
+      margin: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
+  Widget _buildFloatingActions(BuildContext context) {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 8,
+      left: 16,
+      right: 16,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _buildFloatingActionButton(
+            context: context,
+            icon: Icons.arrow_back,
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          _buildFloatingActionButton(
+            context: context,
+            child: _buildCartIcon(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingActionButton({
+    required BuildContext context,
+    IconData? icon,
+    Widget? child,
+    VoidCallback? onPressed,
+  }) {
+    return CircleAvatar(
+      backgroundColor: Colors.black.withOpacity(0.5),
+      child: child ?? IconButton(
+        icon: Icon(icon, color: Colors.white),
+        onPressed: onPressed,
+        splashRadius: 20,
       ),
     );
   }
 
   Widget _buildCartIcon(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
-      child: Consumer<CartProvider>(
-        builder: (_, cart, ch) => badges.Badge(
-          badgeContent: Text(cart.totalQuantity.round().toString(), style: TextStyle(color: Colors.white, fontSize: 12)),
-          showBadge: cart.totalQuantity > 0,
-          position: badges.BadgePosition.topEnd(top: 0, end: 3),
-          child: ch!,
+    return Consumer<CartProvider>(
+      builder: (_, cart, ch) => badges.Badge(
+        badgeContent: Text(
+          cart.totalQuantity.round().toString(),
+          style: const TextStyle(color: Colors.white, fontSize: 12),
         ),
-        child: IconButton(
-          icon: Icon(Icons.shopping_cart_outlined),
-          onPressed: () {
-            Provider.of<NavigationProvider>(context, listen: false).setIndex(1);
-            Navigator.of(context).pop();
-          },
+        showBadge: cart.totalQuantity > 0,
+        position: badges.BadgePosition.topEnd(top: -4, end: -4),
+        badgeStyle: badges.BadgeStyle(
+          badgeColor: Theme.of(context).primaryColor,
         ),
+        child: ch!,
       ),
+      child: IconButton(
+        icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
+        onPressed: () {
+          Provider.of<NavigationProvider>(context, listen: false).setIndex(1);
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
+        splashRadius: 20,
+      ),
+    );
+  }
+
+  Widget _buildProductInfo(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.product.name,
+          style: theme.textTheme.headlineMedium?.copyWith(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'MXN \$${widget.product.price.toStringAsFixed(2)}',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            color: theme.primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Descripción',
+          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          widget.product.description,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: Colors.black54,
+            height: 1.6,
+          ),
+        ),
+        const SizedBox(height: 24),
+        if (widget.product.brand != null && widget.product.brand!.isNotEmpty) ...[
+          Text(
+            'Marca',
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            widget.product.brand!,
+            style: theme.textTheme.bodyLarge?.copyWith(color: Colors.black54),
+          ),
+        ],
+        const SizedBox(height: 100), // Extra space to scroll behind bottom bar
+      ],
     );
   }
 
   Widget _buildBottomActionBar(BuildContext context) {
     final theme = Theme.of(context);
     final total = _quantity * widget.product.price;
+    final String unitText;
+    if (_isVolumetric) {
+      unitText = 'Litros';
+    } else {
+      unitText = (_quantity == 1.0) ? 'Pieza' : 'Piezas';
+    }
 
     return Container(
-      padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + MediaQuery.of(context).padding.bottom),
+      padding: EdgeInsets.fromLTRB(24, 16, 24, 16 + MediaQuery.of(context).padding.bottom),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1.5)),
+        border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _buildQuantitySelector(theme),
-          SizedBox(height: 16),
-          ElevatedButton(
+          const SizedBox(width: 16),
+          Text(
+            unitText,
+            style: theme.textTheme.titleSmall?.copyWith(color: Colors.grey[700]),
+          ),
+          const Spacer(),
+          ElevatedButton.icon(
             onPressed: _addToCart,
             style: ElevatedButton.styleFrom(
-              minimumSize: Size(double.infinity, 56),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               backgroundColor: theme.primaryColor,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-              textStyle: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            child: Text('Añadir por MX\$${total.toStringAsFixed(2)}'),
+            icon: const Icon(Icons.add_shopping_cart, size: 20),
+            label: Text('Añadir (MX\$${total.toStringAsFixed(2)})'),
           ),
         ],
       ),
@@ -202,34 +312,43 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildQuantitySelector(ThemeData theme) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Cantidad:',
-          style: theme.textTheme.titleMedium,
-        ),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300, width: 1.5),
-            borderRadius: BorderRadius.circular(12),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          IconButton(
+            onPressed: () => _changeQuantity(_isVolumetric ? -0.1 : -1),
+            icon: const Icon(Icons.remove, size: 20),
+            splashRadius: 20,
+            color: Colors.black54,
           ),
-          child: Row(
-            children: <Widget>[
-              IconButton(onPressed: () => _changeQuantity(_isVolumetric ? -0.1 : -1), icon: Icon(Icons.remove, size: 20), splashRadius: 24, color: Colors.black54),
-              SizedBox(
-                width: 60,
-                child: Text(
-                  '${_textController.text} ${widget.product.unit}',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
+          SizedBox(
+            width: 45,
+            child: TextFormField(
+              controller: _textController,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              keyboardType: TextInputType.numberWithOptions(decimal: _isVolumetric),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
               ),
-              IconButton(onPressed: () => _changeQuantity(_isVolumetric ? 0.1 : 1), icon: Icon(Icons.add, size: 20), splashRadius: 24, color: Colors.black54),
-            ],
+            ),
           ),
-        ),
-      ],
+          IconButton(
+            onPressed: () => _changeQuantity(_isVolumetric ? 0.1 : 1),
+            icon: const Icon(Icons.add, size: 20),
+            splashRadius: 20,
+            color: Colors.black54,
+          ),
+        ],
+      ),
     );
   }
 }

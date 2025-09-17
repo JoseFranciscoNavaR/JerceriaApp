@@ -6,6 +6,8 @@ import '../providers/cart_provider.dart';
 import '../models/product_model.dart';
 
 class CartScreen extends StatelessWidget {
+  const CartScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     // Consumer widget will listen to CartProvider changes and rebuild the UI
@@ -19,12 +21,12 @@ class CartScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.remove_shopping_cart_outlined, size: 100, color: Colors.grey[300]),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Text(
                   'Tu carrito está vacío',
                   style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   'Añade productos para verlos aquí',
                   style: TextStyle(fontSize: 16, color: Colors.grey[500]),
@@ -46,37 +48,37 @@ class CartScreen extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    Text(
+                    const Text(
                       'Total',
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
-                    Spacer(),
+                    const Spacer(),
                     Chip(
                       label: Text(
                         '\$${cart.totalAmount.toStringAsFixed(2)}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       backgroundColor: Theme.of(context).primaryColor,
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     ElevatedButton(
-                      child: Text('COMPRAR'),
                       style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                       ),
                       onPressed: cart.totalAmount <= 0 ? null : () {
                         // TODO: Implement order logic
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Función de compra no implementada todavía.'))
+                          const SnackBar(content: Text('Función de compra no implementada todavía.'))
                         );
                         // cart.clear();
                       },
+                      child: Text('COMPRAR'),
                     )
                   ],
                 ),
@@ -120,21 +122,21 @@ class CartListItem extends StatelessWidget {
       key: ValueKey(cartItem.id),
       background: Container(
         color: theme.colorScheme.error.withOpacity(0.8),
-        child: Icon(Icons.delete, color: Colors.white, size: 30),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
+        child: Icon(Icons.delete, color: Colors.white, size: 30),
       ),
       direction: DismissDirection.endToStart,
       confirmDismiss: (direction) {
         return showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: Text('¿Estás seguro?'),
+            title: const Text('¿Estás seguro?'),
             content: Text('¿Quieres eliminar "${cartItem.name}" del carrito?'),
             actions: <Widget>[
-              TextButton(child: Text('No'), onPressed: () => Navigator.of(ctx).pop(false)),
-              TextButton(child: Text('Sí'), onPressed: () => Navigator.of(ctx).pop(true)),
+              TextButton(child: const Text('No'), onPressed: () => Navigator.of(ctx).pop(false)),
+              TextButton(child: const Text('Sí'), onPressed: () => Navigator.of(ctx).pop(true)),
             ],
           ),
         );
@@ -155,7 +157,7 @@ class CartListItem extends StatelessWidget {
               onBackgroundImageError: (exception, stackTrace) => {},
               backgroundColor: Colors.grey[200],
             ),
-            title: Text(cartItem.name, style: TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(cartItem.name, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(
               'Total: \$${(cartItem.price * cartItem.quantity).toStringAsFixed(2)}',
               style: TextStyle(color: Colors.grey[600]),
@@ -175,7 +177,7 @@ class CartListItem extends StatelessWidget {
                   ),
                   Text(
                     '${formatQuantity(cartItem)} ${cartItem.unit}',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     icon: Icon(Icons.add, color: theme.primaryColor, size: 18),

@@ -4,12 +4,14 @@ import './admin_product_list_screen.dart';
 import './admin_category_list_screen.dart'; // Import the new screen
 
 class AdminPanelScreen extends StatelessWidget {
+  const AdminPanelScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text('Panel de Administrador', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Panel de Administrador', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -17,7 +19,7 @@ class AdminPanelScreen extends StatelessWidget {
         automaticallyImplyLeading: false, // No muestra la flecha de regreso
         actions: [
           IconButton(
-            icon: Icon(Icons.logout_outlined),
+            icon: const Icon(Icons.logout_outlined),
             tooltip: 'Cerrar Sesión',
             onPressed: () {
               // Regresa a la pantalla de inicio y limpia el historial de navegación
@@ -62,7 +64,7 @@ class AdminPanelScreen extends StatelessWidget {
             subtitle: 'Ver y gestionar los pedidos de los clientes',
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Funcionalidad de órdenes próximamente.')),
+                const SnackBar(content: Text('Funcionalidad de órdenes próximamente.')),
               );
             },
           ),
@@ -81,7 +83,7 @@ class AdminPanelScreen extends StatelessWidget {
       child: ListTile(
         contentPadding: const EdgeInsets.all(16.0),
         leading: Icon(icon, size: 40, color: Theme.of(context).colorScheme.primary),
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         subtitle: Text(subtitle, style: TextStyle(color: Colors.grey[600])),
         trailing: Icon(Icons.arrow_forward_ios, color: Colors.grey[400]),
         onTap: onTap,

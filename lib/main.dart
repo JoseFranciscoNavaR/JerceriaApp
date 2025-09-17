@@ -34,7 +34,7 @@ void main() async {
 
 Future<void> addDummyCategories() async {
   final categoryBox = Hive.box<Category>('categories');
-  final uuid = Uuid();
+  const uuid = Uuid();
   final categories = [
     Category(id: uuid.v4(), name: 'Limpieza Hogar'),
     Category(id: uuid.v4(), name: 'Cuidado Ropa'),
@@ -50,14 +50,14 @@ Future<void> addDummyCategories() async {
 Future<void> addDummyProducts() async {
   final productBox = Hive.box<Product>('products');
   final categoryBox = Hive.box<Category>('categories');
-  final uuid = Uuid();
+  const uuid = Uuid();
 
   final limpiezaHogar = categoryBox.values.firstWhere((c) => c.name == 'Limpieza Hogar');
   final cuidadoRopa = categoryBox.values.firstWhere((c) => c.name == 'Cuidado Ropa');
   final cuidadoPersonal = categoryBox.values.firstWhere((c) => c.name == 'Cuidado Personal');
 
   final products = [
-    Product(id: uuid.v4(), name: 'Limpiador Multiusos', description: 'Limpia y desinfecta cualquier superficie del hogar.', price: 25.50, imageUrl: 'https://i.imgur.com/gM5sB8p.png', categoryId: limpiezaHogar.id, unit: 'Lt', brand: 'Fabuloso'),
+    Product(id: uuid.v4(), name: 'Limpiador Multiusos', description: 'Limpia y desinfecta cualquier superficie del hogar.', price: 25.50, imageUrl: 'hhttps://imgur.com/gallery/kitty-xdyMpHr', categoryId: limpiezaHogar.id, unit: 'Lt', brand: 'Fabuloso'),
     Product(id: uuid.v4(), name: 'Detergente para Ropa', description: 'Deja tu ropa limpia y con un aroma fresco.', price: 85.00, imageUrl: 'https://i.imgur.com/J8xP3LY.png', categoryId: cuidadoRopa.id, unit: 'Lt', brand: 'Ariel'),
     Product(id: uuid.v4(), name: 'Lavavajillas Líquido', description: 'Arranca la grasa más difícil de tus platos.', price: 30.20, imageUrl: 'https://i.imgur.com/A4E3A9s.png', categoryId: limpiezaHogar.id, unit: 'Lt', brand: 'Salvo'),
     Product(id: uuid.v4(), name: 'Suavizante de Telas', description: 'Ropa suave y perfumada por más tiempo.', price: 35.00, imageUrl: 'https://i.imgur.com/5J2b1Dk.png', categoryId: cuidadoRopa.id, unit: 'Lt', brand: 'Ensueño'),
@@ -75,6 +75,8 @@ Future<void> addDummyProducts() async {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -93,7 +95,7 @@ class MyApp extends StatelessWidget {
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         home: HomeScreen(),
-        routes: {},
+        routes: const {},
       ),
     );
   }

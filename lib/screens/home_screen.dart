@@ -13,6 +13,8 @@ import './order_history_screen.dart';
 import 'package:badges/badges.dart' as badges;
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -22,13 +24,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final navigationProvider = Provider.of<NavigationProvider>(context);
 
-    final List<Widget> _widgetOptions = <Widget>[
+    final List<Widget> widgetOptions = <Widget>[
       ProductsGrid(),
       CartScreen(),
       OrderHistoryScreen(),
     ];
 
-    final List<String> _widgetTitles = <String>[
+    final List<String> widgetTitles = <String>[
       'Jarcería',
       'Mi Carrito',
       'Historial de Órdenes',
@@ -36,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_widgetTitles[navigationProvider.selectedIndex], style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(widgetTitles[navigationProvider.selectedIndex], style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -66,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: IndexedStack(
         index: navigationProvider.selectedIndex,
-        children: _widgetOptions,
+        children: widgetOptions,
       ),
       backgroundColor: Colors.grey[50],
       bottomNavigationBar: BottomNavigationBar(
@@ -79,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Consumer<CartProvider>(
               builder: (_, cart, ch) => badges.Badge(
-                badgeContent: Text(cart.totalQuantity.round().toString(), style: TextStyle(color: Colors.white, fontSize: 12)),
+                badgeContent: Text(cart.totalQuantity.round().toString(), style: const TextStyle(color: Colors.white, fontSize: 12)),
                 showBadge: cart.totalQuantity > 0,
                 position: badges.BadgePosition.topEnd(top: -8, end: -8),
                 child: ch!,
@@ -106,6 +108,8 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class ProductsGrid extends StatefulWidget {
+  const ProductsGrid({Key? key}) : super(key: key);
+
   @override
   _ProductsGridState createState() => _ProductsGridState();
 }
@@ -135,7 +139,7 @@ class _ProductsGridState extends State<ProductsGrid> {
                 child: TextField(
                   decoration: InputDecoration(
                     hintText: 'Buscar productos...',
-                    prefixIcon: Icon(Icons.search, color: Colors.grey),
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
@@ -153,7 +157,7 @@ class _ProductsGridState extends State<ProductsGrid> {
                   },
                 ),
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               PopupMenuButton<String>(
                 onSelected: (value) {
                   setState(() {
@@ -231,7 +235,7 @@ class _ProductsGridState extends State<ProductsGrid> {
           child: ValueListenableBuilder(
             valueListenable: Hive.box<Category>('categories').listenable(),
             builder: (context, Box<Category> box, _) {
-              final categories = [Category(id: 'all', name: 'Todos')]..addAll(box.values.where((c) => c.isAvailable));
+              final categories = [Category(id: 'all', name: 'Todos'), ...box.values.where((c) => c.isAvailable)];
               return ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -305,7 +309,7 @@ class _ProductsGridState extends State<ProductsGrid> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.search_off, size: 100, color: Colors.grey[300]),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                       Text(
                         'No se encontraron productos',
                         style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
@@ -322,7 +326,7 @@ class _ProductsGridState extends State<ProductsGrid> {
 
               return RefreshIndicator(
                 onRefresh: () async {
-                  await Future.delayed(Duration(seconds: 1));
+                  await Future.delayed(const Duration(seconds: 1));
                 },
                 child: GridView.builder(
                   padding: const EdgeInsets.all(16.0),

@@ -7,7 +7,7 @@ import '../../services/database_service.dart';
 class AdminEditProductScreen extends StatefulWidget {
   final Product? product;
 
-  AdminEditProductScreen({this.product});
+  const AdminEditProductScreen({Key? key, this.product}) : super(key: key);
 
   @override
   _AdminEditProductScreenState createState() => _AdminEditProductScreenState();
@@ -16,7 +16,7 @@ class AdminEditProductScreen extends StatefulWidget {
 class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
   final _formKey = GlobalKey<FormState>();
   final _databaseService = DatabaseService();
-  final _uuid = Uuid();
+  static const _uuid = Uuid();
 
   final _nameController = TextEditingController();
   final _brandController = TextEditingController();
@@ -103,17 +103,17 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
       }
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Producto guardado exitosamente'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('Producto guardado exitosamente'), backgroundColor: Colors.green),
       );
     } catch (error) {
       await showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('Ocurrió un error'),
-          content: Text('No se pudo guardar el producto. Intente de nuevo.'),
+          title: const Text('Ocurrió un error'),
+          content: const Text('No se pudo guardar el producto. Intente de nuevo.'),
           actions: <Widget>[
             TextButton(
-              child: Text('Okay'),
+              child: const Text('Okay'),
               onPressed: () => Navigator.of(ctx).pop(),
             )
           ],
@@ -133,7 +133,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(widget.product == null ? 'Añadir Producto' : 'Editar Producto', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(widget.product == null ? 'Añadir Producto' : 'Editar Producto', style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -152,31 +152,31 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   _buildImagePreview(),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   _buildTextFormField(controller: _nameController, labelText: 'Nombre del Producto', validator: (v) => v!.isEmpty ? 'Este campo es obligatorio.' : null),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   _buildTextFormField(controller: _brandController, labelText: 'Marca (Opcional)', validator: (v) => null),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   _buildCategoryDropdown(),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   _buildTextFormField(controller: _descriptionController, labelText: 'Descripción', maxLines: 3, validator: (v) => v!.isEmpty ? 'Este campo es obligatorio.' : null),
-                  SizedBox(height: 20),
-                  _buildTextFormField(controller: _priceController, labelText: 'Precio', keyboardType: TextInputType.numberWithOptions(decimal: true), validator: (v) {
+                  const SizedBox(height: 20),
+                  _buildTextFormField(controller: _priceController, labelText: 'Precio', keyboardType: const TextInputType.numberWithOptions(decimal: true), validator: (v) {
                     if (v == null || v.isEmpty) return 'Requerido';
                     if (double.tryParse(v) == null) return 'Número inválido';
                     if (double.parse(v) <= 0) return '> 0';
                     return null;
                   }),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   _buildTextFormField(controller: _imageUrlController, labelText: 'URL de la Imagen', keyboardType: TextInputType.url, validator: (v) {
                     if (v == null || v.isEmpty) return 'Este campo es obligatorio.';
                     final uri = Uri.tryParse(v);
                     if (uri == null || !uri.isAbsolute) return 'Por favor, introduce una URL válida.';
                     return null;
                   }),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   SwitchListTile(
-                    title: Text('Vendido por volumen'),
+                    title: const Text('Vendido por volumen'),
                     subtitle: Text(_isSoldByVolume ? 'La unidad se establecerá en Litros (Lt)' : 'La unidad se establecerá en Piezas (Pz)'),
                     value: _isSoldByVolume,
                     onChanged: (bool value) {
@@ -190,7 +190,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                     contentPadding: EdgeInsets.zero,
                   ),
                   SwitchListTile(
-                    title: Text('Disponible para la venta'),
+                    title: const Text('Disponible para la venta'),
                     value: _isAvailable,
                     onChanged: (bool value) {
                       setState(() {
@@ -202,16 +202,16 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                     inactiveThumbColor: Colors.grey[600],
                     contentPadding: EdgeInsets.zero,
                   ),
-                  SizedBox(height: 30),
+                  const SizedBox(height: 30),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: _isLoading ? null : _saveForm,
-                      icon: _isLoading ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white)) : Icon(Icons.save_alt_outlined),
-                      label: Text(_isLoading ? 'Guardando...' : 'Guardar Producto', style: TextStyle(fontSize: 18, color: Colors.white)),
+                      icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white)) : const Icon(Icons.save_alt_outlined),
+                      label: Text(_isLoading ? 'Guardando...' : 'Guardar Producto', style: const TextStyle(fontSize: 18, color: Colors.white)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
-                        padding: EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       ),
                     ),
@@ -295,8 +295,8 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
               child: Image.network(
                 imageUrl,
                 fit: BoxFit.cover,
-                loadingBuilder: (context, child, progress) => progress == null ? child : Center(child: CircularProgressIndicator()),
-                errorBuilder: (context, error, stackTrace) => Icon(Icons.error_outline, color: Colors.red, size: 50),
+                loadingBuilder: (context, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator()),
+                errorBuilder: (context, error, stackTrace) => const Icon(Icons.error_outline, color: Colors.red, size: 50),
               ),
             )
           : Center(
@@ -304,7 +304,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.image_outlined, size: 50, color: Colors.grey[400]),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text('Vista previa de la imagen', style: TextStyle(color: Colors.grey[600])),
                 ],
               ),

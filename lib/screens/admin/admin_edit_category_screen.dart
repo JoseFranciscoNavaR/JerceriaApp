@@ -6,7 +6,7 @@ import '../../services/database_service.dart';
 class AdminEditCategoryScreen extends StatefulWidget {
   final Category? category;
 
-  AdminEditCategoryScreen({this.category});
+  const AdminEditCategoryScreen({Key? key, this.category}) : super(key: key);
 
   @override
   _AdminEditCategoryScreenState createState() => _AdminEditCategoryScreenState();
@@ -15,7 +15,7 @@ class AdminEditCategoryScreen extends StatefulWidget {
 class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
   final _formKey = GlobalKey<FormState>();
   final _databaseService = DatabaseService();
-  final _uuid = Uuid();
+  static const _uuid = Uuid();
 
   final _nameController = TextEditingController();
   bool _isAvailable = true;
@@ -61,17 +61,17 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
       }
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Categoría guardada exitosamente'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('Categoría guardada exitosamente'), backgroundColor: Colors.green),
       );
     } catch (error) {
       await showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('Ocurrió un error'),
-          content: Text('No se pudo guardar la categoría. Intente de nuevo.'),
+          title: const Text('Ocurrió un error'),
+          content: const Text('No se pudo guardar la categoría. Intente de nuevo.'),
           actions: <Widget>[
             TextButton(
-              child: Text('Okay'),
+              child: const Text('Okay'),
               onPressed: () => Navigator.of(ctx).pop(),
             )
           ],
@@ -91,7 +91,7 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(widget.category == null ? 'Añadir Categoría' : 'Editar Categoría', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(widget.category == null ? 'Añadir Categoría' : 'Editar Categoría', style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -110,9 +110,9 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   _buildTextFormField(controller: _nameController, labelText: 'Nombre de la Categoría', validator: (v) => v!.isEmpty ? 'Este campo es obligatorio.' : null),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   SwitchListTile(
-                    title: Text('Disponible para la venta'),
+                    title: const Text('Disponible para la venta'),
                     value: _isAvailable,
                     onChanged: (bool value) {
                       setState(() {
@@ -124,16 +124,16 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
                     inactiveThumbColor: Colors.grey[600],
                     contentPadding: EdgeInsets.zero,
                   ),
-                  SizedBox(height: 30),
+                  const SizedBox(height: 30),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: _isLoading ? null : _saveForm,
-                      icon: _isLoading ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white)) : Icon(Icons.save_alt_outlined),
-                      label: Text(_isLoading ? 'Guardando...' : 'Guardar Categoría', style: TextStyle(fontSize: 18, color: Colors.white)),
+                      icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white)) : const Icon(Icons.save_alt_outlined),
+                      label: Text(_isLoading ? 'Guardando...' : 'Guardar Categoría', style: const TextStyle(fontSize: 18, color: Colors.white)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
-                        padding: EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       ),
                     ),
