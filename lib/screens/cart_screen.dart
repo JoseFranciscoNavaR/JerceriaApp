@@ -55,7 +55,7 @@ class CartScreen extends StatelessWidget {
                     const Spacer(),
                     Chip(
                       label: Text(
-                        '\$${cart.totalAmount.toStringAsFixed(2)}',
+                        'MX\$${cart.totalAmount.toStringAsFixed(2)}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -159,7 +159,7 @@ class CartListItem extends StatelessWidget {
             ),
             title: Text(cartItem.name, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(
-              'Total: \$${(cartItem.price * cartItem.quantity).toStringAsFixed(2)}',
+              'Total: MX\$${(cartItem.price * cartItem.quantity).toStringAsFixed(2)}',
               style: TextStyle(color: Colors.grey[600]),
             ),
             trailing: Container(

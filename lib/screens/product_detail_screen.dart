@@ -96,18 +96,68 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('¡Añadido al carrito!'),
-          duration: const Duration(seconds: 3),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.fromLTRB(24, 0, 24, 110),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          action: SnackBarAction(
-            label: 'VER CARRITO',
-            textColor: Theme.of(context).colorScheme.secondary,
-            onPressed: () {
-              Provider.of<NavigationProvider>(context, listen: false).setIndex(1);
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            },
+          margin: const EdgeInsets.fromLTRB(24, 0, 24, 10), // Adjusted bottom margin
+          content: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.check_circle_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        '¡Añadido al carrito!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${_isVolumetric ? _quantity.toStringAsFixed(2) : _quantity.toStringAsFixed(0)} x ${widget.product.name}',
+                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: () {
+                    Provider.of<NavigationProvider>(context, listen: false).setIndex(1);
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(color: Colors.white54),
+                    ),
+                  ),
+                  child: const Text('VER'),
+                ),
+              ],
+            ),
           ),
         ),
       );
