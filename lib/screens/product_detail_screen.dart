@@ -6,6 +6,9 @@ import '../models/product_model.dart';
 import '../providers/cart_provider.dart';
 import '../providers/navigation_provider.dart';
 
+// Enum to manage which input field is active
+enum VolumetricInputMode { liters, pesos }
+
 class ProductDetailScreen extends StatefulWidget {
   static const routeName = '/product-detail';
   final Product product;
@@ -17,22 +20,72 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  late TextEditingController _textController;
+  late TextEditingController _litersController;
+  late TextEditingController _pesosController;
+  late TextEditingController _discreteController;
+  VolumetricInputMode _inputMode = VolumetricInputMode.liters;
 
-  double get _quantity => double.tryParse(_textController.text) ?? 0.0;
+  double get _quantity {
+    if (_isVolumetric) {
+      return double.tryParse(_litersController.text) ?? 0.0;
+    } else {
+      return double.tryParse(_discreteController.text) ?? 0.0;
+    }
+  }
+
   bool get _isVolumetric => widget.product.unit == 'Lt';
 
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController(text: _isVolumetric ? '0.5' : '1');
-    _textController.addListener(() => setState(() {}));
+    _litersController = TextEditingController(text: '0.5');
+    _pesosController = TextEditingController();
+    _discreteController = TextEditingController(text: '1');
+
+    if (_isVolumetric) {
+      _updatePesosFromLiters();
+      _litersController.addListener(_onLitersChanged);
+      _pesosController.addListener(_onPesosChanged);
+    }
+    _discreteController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
-    _textController.dispose();
+    _litersController.dispose();
+    _pesosController.dispose();
+    _discreteController.dispose();
     super.dispose();
+  }
+
+  void _onLitersChanged() {
+    if (_inputMode == VolumetricInputMode.liters) {
+      _updatePesosFromLiters();
+      setState(() {});
+    }
+  }
+
+  void _onPesosChanged() {
+    if (_inputMode == VolumetricInputMode.pesos) {
+      _updateLitersFromPesos();
+      setState(() {});
+    }
+  }
+
+  void _updatePesosFromLiters() {
+    final liters = double.tryParse(_litersController.text) ?? 0.0;
+    final price = liters * widget.product.price;
+    if (mounted) {
+      _pesosController.text = price.toStringAsFixed(2);
+    }
+  }
+
+  void _updateLitersFromPesos() {
+    final pesos = double.tryParse(_pesosController.text) ?? 0.0;
+    final liters = pesos / widget.product.price;
+    if (mounted) {
+      _litersController.text = liters.toStringAsFixed(3);
+    }
   }
 
   void _addToCart() {
@@ -61,16 +114,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
   }
 
-  void _changeQuantity(double amount) {
-    final currentValue = _quantity;
-    double newValue;
-    if (_isVolumetric) {
-      newValue = max(0.1, currentValue + amount);
-      _textController.text = newValue.toStringAsFixed(1);
-    } else {
-      newValue = max(1, currentValue + amount);
-      _textController.text = newValue.toStringAsFixed(0);
-    }
+  void _changeDiscreteQuantity(double amount) {
+    final currentValue = double.tryParse(_discreteController.text) ?? 0.0;
+    final newValue = max(1, currentValue + amount);
+    _discreteController.text = newValue.toStringAsFixed(0);
   }
 
   @override
@@ -91,7 +138,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget _buildBackgroundImage(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     return Positioned.fill(
-      bottom: screenHeight * 0.45, // Show about 55% of the image
+      bottom: screenHeight * 0.45,
       child: Hero(
         tag: widget.product.id,
         child: Image.network(
@@ -106,9 +153,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Widget _buildDraggableSheet(BuildContext context) {
     return DraggableScrollableSheet(
-      initialChildSize: 0.6, // Start at 60% of the screen
+      initialChildSize: 0.6,
       minChildSize: 0.6,
-      maxChildSize: 0.9, // Can be dragged up to 90%
+      maxChildSize: 0.9,
       builder: (BuildContext context, ScrollController scrollController) {
         return Container(
           decoration: const BoxDecoration(
@@ -134,6 +181,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   children: [
                     _buildProductInfo(context),
+                    if (_isVolumetric) _buildVolumetricCalculator(context),
                   ],
                 ),
               ),
@@ -141,6 +189,34 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
         );
       },
+    );
+  }
+  
+  Widget _buildVolumetricCalculator(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: 24),
+        SegmentedButton<VolumetricInputMode>(
+          segments: const <ButtonSegment<VolumetricInputMode>>[
+            ButtonSegment<VolumetricInputMode>(
+                value: VolumetricInputMode.liters,
+                label: Text('Por Litros'),
+                icon: Icon(Icons.science_outlined)),
+            ButtonSegment<VolumetricInputMode>(
+                value: VolumetricInputMode.pesos,
+                label: Text('Por Pesos'),
+                icon: Icon(Icons.attach_money)),
+          ],
+          selected: <VolumetricInputMode>{_inputMode},
+          onSelectionChanged: (Set<VolumetricInputMode> newSelection) {
+            setState(() {
+              _inputMode = newSelection.first;
+            });
+          },
+        ),
+        const SizedBox(height: 16),
+        _buildVolumetricInputs(context),
+      ],
     );
   }
 
@@ -233,7 +309,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'MX\$${widget.product.price.toStringAsFixed(2)}',
+          _isVolumetric
+              ? 'MX\$${widget.product.price.toStringAsFixed(2)} / Litro'
+              : 'MX\$${widget.product.price.toStringAsFixed(2)}',
           style: theme.textTheme.headlineSmall?.copyWith(
             color: theme.primaryColor,
             fontWeight: FontWeight.bold,
@@ -264,12 +342,100 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             style: theme.textTheme.bodyLarge?.copyWith(color: Colors.black54),
           ),
         ],
-        const SizedBox(height: 100), // Extra space to scroll behind bottom bar
+        // Adjust space depending on the product type
+        SizedBox(height: _isVolumetric ? 24 : 100),
       ],
+    );
+  }
+  
+  Widget _buildVolumetricInputs(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 120.0), // Space for bottom bar
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildTextField(
+              controller: _litersController,
+              label: 'Litros',
+              prefix: 'Lt',
+              theme: theme,
+              enabled: _inputMode == VolumetricInputMode.liters,
+               onTap: () {
+                if (_inputMode != VolumetricInputMode.liters) {
+                  setState(() => _inputMode = VolumetricInputMode.liters);
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _buildTextField(
+              controller: _pesosController,
+              label: 'Pesos',
+              prefix: 'MX\$',
+              theme: theme,
+              enabled: _inputMode == VolumetricInputMode.pesos,
+              onTap: () {
+                if (_inputMode != VolumetricInputMode.pesos) {
+                  setState(() => _inputMode = VolumetricInputMode.pesos);
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String prefix,
+    required ThemeData theme,
+    bool enabled = true,
+    VoidCallback? onTap,
+  }) {
+    return TextField(
+      controller: controller,
+      onTap: onTap,
+      readOnly: !enabled,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      textAlign: TextAlign.center,
+      style: theme.textTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.bold,
+        color: enabled ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withOpacity(0.6),
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: enabled ? theme.primaryColor : theme.colorScheme.onSurface.withOpacity(0.4)),
+        prefixText: prefix,
+        filled: !enabled,
+        fillColor: Colors.grey.shade100,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+         enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: enabled ? theme.primaryColor : Colors.grey.shade300,
+            width: enabled ? 2.0 : 1.0,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: theme.primaryColor,
+            width: 2.0,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      ),
     );
   }
 
   Widget _buildResponsiveBottomActionBar(BuildContext context) {
+    if (_isVolumetric) {
+      return _buildVolumetricBottomActionBar(context);
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 400) {
@@ -281,15 +447,45 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
+  Widget _buildVolumetricBottomActionBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final total = double.tryParse(_pesosController.text) ?? 0.0;
+    
+    return Container(
+      padding: EdgeInsets.fromLTRB(24, 16, 24, 16 + MediaQuery.of(context).padding.bottom),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _addToCart,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                backgroundColor: theme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+              ),
+              icon: const Icon(Icons.add_shopping_cart, size: 20),
+              label: Text('Añadir (MX\$${total.toStringAsFixed(2)})'),
+            ),
+          ),
+    );
+  }
+
+
   Widget _buildWideBottomActionBar(BuildContext context) {
     final theme = Theme.of(context);
     final total = _quantity * widget.product.price;
-    final String unitText;
-    if (_isVolumetric) {
-      unitText = 'Litros';
-    } else {
-      unitText = (_quantity == 1.0) ? 'Pieza' : 'Piezas';
-    }
+    final String unitText = (_quantity == 1.0) ? 'Pieza' : 'Piezas';
 
     return Container(
       padding: EdgeInsets.fromLTRB(24, 16, 24, 16 + MediaQuery.of(context).padding.bottom),
@@ -300,7 +496,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildQuantitySelector(theme),
+          _buildDiscreteQuantitySelector(theme),
           const SizedBox(width: 16),
           Text(
             unitText,
@@ -326,12 +522,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget _buildCompactBottomActionBar(BuildContext context) {
     final theme = Theme.of(context);
     final total = _quantity * widget.product.price;
-    final String unitText;
-    if (_isVolumetric) {
-      unitText = 'Litros';
-    } else {
-      unitText = (_quantity == 1.0) ? 'Pieza' : 'Piezas';
-    }
+    final String unitText = (_quantity == 1.0) ? 'Pieza' : 'Piezas';
 
     return Container(
       padding: EdgeInsets.fromLTRB(24, 16, 24, 16 + MediaQuery.of(context).padding.bottom),
@@ -345,7 +536,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-               _buildQuantitySelector(theme),
+               _buildDiscreteQuantitySelector(theme),
                 Text(
                   unitText,
                   style: theme.textTheme.titleSmall?.copyWith(color: Colors.grey[700]),
@@ -372,7 +563,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  Widget _buildQuantitySelector(ThemeData theme) {
+  Widget _buildDiscreteQuantitySelector(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
@@ -383,7 +574,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           IconButton(
-            onPressed: () => _changeQuantity(_isVolumetric ? -0.1 : -1),
+            onPressed: () => _changeDiscreteQuantity(-1),
             icon: const Icon(Icons.remove, size: 20),
             splashRadius: 20,
             color: Colors.black54,
@@ -391,10 +582,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           SizedBox(
             width: 45,
             child: TextFormField(
-              controller: _textController,
+              controller: _discreteController,
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              keyboardType: TextInputType.numberWithOptions(decimal: _isVolumetric),
+              keyboardType: const TextInputType.numberWithOptions(decimal: false),
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 isDense: true,
@@ -403,7 +594,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
           ),
           IconButton(
-            onPressed: () => _changeQuantity(_isVolumetric ? 0.1 : 1),
+            onPressed: () => _changeDiscreteQuantity(1),
             icon: const Icon(Icons.add, size: 20),
             splashRadius: 20,
             color: Colors.black54,
