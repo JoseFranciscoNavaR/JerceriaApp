@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
-
-import '../providers/cart_provider.dart';
-import '../models/product_model.dart';
+import 'package:jarceria_app/providers/cart_provider.dart';
+import 'package:jarceria_app/providers/order_provider.dart';
+import 'package:jarceria_app/models/product_model.dart';
+import 'package:jarceria_app/models/cart_item_model.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Consumer widget will listen to CartProvider changes and rebuild the UI
     return Consumer<CartProvider>(
       builder: (ctx, cart, _) {
         final cartItems = cart.items.values.toList();
@@ -38,53 +38,7 @@ class CartScreen extends StatelessWidget {
 
         return Column(
           children: <Widget>[
-            // Summary Card
-            Card(
-              margin: const EdgeInsets.fromLTRB(15, 15, 15, 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    const Text(
-                      'Total',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    const Spacer(),
-                    Chip(
-                      label: Text(
-                        'MX\$${cart.totalAmount.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      backgroundColor: Theme.of(context).primaryColor,
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      ),
-                      onPressed: cart.totalAmount <= 0 ? null : () {
-                        // TODO: Implement order logic
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Función de compra no implementada todavía.'))
-                        );
-                        // cart.clear();
-                      },
-                      child: const Text('COMPRAR'),
-                    )
-                  ],
-                ),
-              ),
-            ),
-            // List of items
+            _buildSummaryCard(context, cart),
             Expanded(
               child: ListView.builder(
                 itemCount: cartItems.length,
@@ -96,6 +50,70 @@ class CartScreen extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildSummaryCard(BuildContext context, CartProvider cart) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: const EdgeInsets.fromLTRB(15, 15, 15, 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text(
+                  'Total',
+                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'MX\$${cart.totalAmount.toStringAsFixed(2)}',
+                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                onPressed: cart.totalAmount <= 0
+                    ? null
+                    : () {
+                        Provider.of<OrderProvider>(context, listen: false).addOrder(
+                          cart.items.values.toList(),
+                          cart.totalAmount,
+                        );
+                        cart.clear();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('¡Tu orden ha sido creada con éxito!'),
+                            duration: Duration(seconds: 3),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                child: const Text('COMPRAR AHORA'),
+              ),
+            )
+          ],
+        ),
+      ),
     );
   }
 }
@@ -110,7 +128,6 @@ class CartListItem extends StatelessWidget {
     final cart = Provider.of<CartProvider>(context, listen: false);
     final theme = Theme.of(context);
 
-    // Helper to format quantity
     String formatQuantity(CartItem item) {
       if (item.unit == 'Lt') {
         return item.quantity.toStringAsFixed(1);
@@ -121,10 +138,13 @@ class CartListItem extends StatelessWidget {
     return Dismissible(
       key: ValueKey(cartItem.id),
       background: Container(
-        color: theme.colorScheme.error.withOpacity(0.8),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.error.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(10),
+        ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
+        margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
         child: const Icon(Icons.delete, color: Colors.white, size: 30),
       ),
       direction: DismissDirection.endToStart,

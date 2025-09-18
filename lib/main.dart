@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-
 import 'models/product_model.dart';
-import 'models/category_model.dart'; // Import category model
+import 'models/category_model.dart';
 import 'screens/home_screen.dart';
 import 'providers/cart_provider.dart';
 import 'providers/navigation_provider.dart';
+import 'providers/order_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,7 +57,7 @@ Future<void> addDummyProducts() async {
   final cuidadoPersonal = categoryBox.values.firstWhere((c) => c.name == 'Cuidado Personal');
 
   final products = [
-    Product(id: uuid.v4(), name: 'Limpiador Multiusos', description: 'Limpia y desinfecta cualquier superficie del hogar.', price: 25.50, imageUrl: 'hhttps://imgur.com/gallery/kitty-xdyMpHr', categoryId: limpiezaHogar.id, unit: 'Lt', brand: 'Fabuloso'),
+    Product(id: uuid.v4(), name: 'Limpiador Multiusos', description: 'Limpia y desinfecta cualquier superficie del hogar.', price: 25.50, imageUrl: 'https://i.imgur.com/6wF4w2G.png', categoryId: limpiezaHogar.id, unit: 'Lt', brand: 'Fabuloso'),
     Product(id: uuid.v4(), name: 'Detergente para Ropa', description: 'Deja tu ropa limpia y con un aroma fresco.', price: 85.00, imageUrl: 'https://i.imgur.com/J8xP3LY.png', categoryId: cuidadoRopa.id, unit: 'Lt', brand: 'Ariel'),
     Product(id: uuid.v4(), name: 'Lavavajillas Líquido', description: 'Arranca la grasa más difícil de tus platos.', price: 30.20, imageUrl: 'https://i.imgur.com/A4E3A9s.png', categoryId: limpiezaHogar.id, unit: 'Lt', brand: 'Salvo'),
     Product(id: uuid.v4(), name: 'Suavizante de Telas', description: 'Ropa suave y perfumada por más tiempo.', price: 35.00, imageUrl: 'https://i.imgur.com/5J2b1Dk.png', categoryId: cuidadoRopa.id, unit: 'Lt', brand: 'Ensueño'),
@@ -83,6 +83,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (ctx) => CartProvider()),
         ChangeNotifierProvider(create: (ctx) => NavigationProvider()),
+        ChangeNotifierProvider(create: (ctx) => OrderProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

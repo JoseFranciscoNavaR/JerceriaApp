@@ -1,34 +1,6 @@
 import 'package:flutter/foundation.dart';
-import '../models/product_model.dart';
-
-class CartItem {
-  final String id;
-  final String name;
-  final double quantity;
-  final double price;
-  final String imageUrl;
-  final String unit;
-
-  CartItem({
-    required this.id,
-    required this.name,
-    required this.quantity,
-    required this.price,
-    required this.imageUrl,
-    required this.unit,
-  });
-
-  CartItem copyWith({double? quantity}) {
-    return CartItem(
-      id: id,
-      name: name,
-      quantity: quantity ?? this.quantity,
-      price: price,
-      imageUrl: imageUrl,
-      unit: unit,
-    );
-  }
-}
+import 'package:jarceria_app/models/product_model.dart';
+import 'package:jarceria_app/models/cart_item_model.dart';
 
 class CartProvider with ChangeNotifier {
   Map<String, CartItem> _items = {};

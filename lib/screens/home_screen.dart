@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     final List<String> widgetTitles = <String>[
-      'Jarcería',
+      'Jarcería Productos',
       'Mi Carrito',
       'Historial de Órdenes',
     ];
