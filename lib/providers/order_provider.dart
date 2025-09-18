@@ -3,7 +3,7 @@ import 'package:jarceria_app/models/cart_item_model.dart';
 import 'package:jarceria_app/models/order_model.dart';
 
 class OrderProvider with ChangeNotifier {
-  List<Order> _orders = [];
+  final List<Order> _orders = [];
 
   List<Order> get orders => [..._orders];
 
