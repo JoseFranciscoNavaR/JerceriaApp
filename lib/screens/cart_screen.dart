@@ -127,12 +127,53 @@ class CartListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context, listen: false);
     final theme = Theme.of(context);
+    final isVolumetric = cartItem.unit == 'Lt';
 
-    String formatQuantity(CartItem item) {
-      if (item.unit == 'Lt') {
-        return item.quantity.toStringAsFixed(1);
-      }
-      return item.quantity.toStringAsFixed(0);
+    final String quantityText = isVolumetric
+        ? '${cartItem.quantity.toStringAsFixed(3)} ${cartItem.unit}'
+        : '${cartItem.quantity.toStringAsFixed(0)} ${cartItem.unit}';
+
+    final String totalText = isVolumetric && cartItem.totalPrice != null
+        ? 'Total: MX\$${cartItem.totalPrice!.toStringAsFixed(2)}'
+        : 'Total: MX\$${(cartItem.price * cartItem.quantity).toStringAsFixed(2)}';
+
+    final Widget trailingWidget;
+    if (isVolumetric) {
+      trailingWidget = Text(
+        quantityText,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      );
+    } else {
+      trailingWidget = Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300, width: 1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            IconButton(
+              icon: Icon(Icons.remove, color: theme.colorScheme.error, size: 18),
+              onPressed: () => cart.removeSingleItem(cartItem.id),
+              splashRadius: 20,
+            ),
+            Text(
+              quantityText,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+            IconButton(
+              icon: Icon(Icons.add, color: theme.primaryColor, size: 18),
+              onPressed: () {
+                final product = Hive.box<Product>('products').get(cartItem.id);
+                if (product != null) {
+                  cart.addItem(product, 1.0);
+                }
+              },
+              splashRadius: 20,
+            ),
+          ],
+        ),
+      );
     }
 
     return Dismissible(
@@ -179,40 +220,10 @@ class CartListItem extends StatelessWidget {
             ),
             title: Text(cartItem.name, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(
-              'Total: MX\$${(cartItem.price * cartItem.quantity).toStringAsFixed(2)}',
+              totalText,
               style: TextStyle(color: Colors.grey[600]),
             ),
-            trailing: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300, width: 1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  IconButton(
-                    icon: Icon(Icons.remove, color: theme.colorScheme.error, size: 18),
-                    onPressed: () => cart.removeSingleItem(cartItem.id),
-                    splashRadius: 20,
-                  ),
-                  Text(
-                    '${formatQuantity(cartItem)} ${cartItem.unit}',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.add, color: theme.primaryColor, size: 18),
-                    onPressed: () {
-                      final product = Hive.box<Product>('products').get(cartItem.id);
-                      if (product != null) {
-                        final increment = product.unit == 'Lt' ? 0.1 : 1.0;
-                        cart.addItem(product, increment);
-                      }
-                    },
-                    splashRadius: 20,
-                  ),
-                ],
-              ),
-            ),
+            trailing: trailingWidget,
           ),
         ),
       ),

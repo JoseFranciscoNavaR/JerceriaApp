@@ -114,35 +114,43 @@ class _OrderTicketItemState extends State<OrderTicketItem> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               height: min(widget.order.products.length * 28.0 + 10, 120),
               child: ListView(
-                children: widget.order.products
-                    .map(
-                      (prod) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            Expanded(
-                              child: Text(
-                                prod.name,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                children: widget.order.products.map((prod) {
+                  final isVolumetric = prod.unit == 'Lt';
+                  final String detailsText;
+
+                  if (isVolumetric) {
+                    final itemTotal = prod.totalPrice ?? (prod.quantity * prod.price);
+                    detailsText = '${prod.quantity.toStringAsFixed(3)} ${prod.unit} x MX\$${itemTotal.toStringAsFixed(2)}';
+                  } else {
+                    detailsText = '${prod.quantity.toStringAsFixed(0)} x MX\$${prod.price.toStringAsFixed(2)}';
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            prod.name,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
                             ),
-                            Text(
-                              '${prod.quantity} x \$${prod.price.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 15,
-                                color: Colors.grey,
-                              ),
-                            )
-                          ],
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                    )
-                    .toList(),
+                        Text(
+                          detailsText,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey,
+                          ),
+                        )
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
             )
         ],

@@ -22,12 +22,16 @@ class CartProvider with ChangeNotifier {
   double get totalAmount {
     var total = 0.0;
     _items.forEach((key, cartItem) {
-      total += cartItem.price * cartItem.quantity;
+      if (cartItem.totalPrice != null) {
+        total += cartItem.totalPrice!;
+      } else {
+        total += cartItem.price * cartItem.quantity;
+      }
     });
     return total;
   }
 
-  void addItem(Product product, double quantity) {
+  void addItem(Product product, double quantity, {double? totalPrice}) {
     if (quantity <= 0) return;
 
     if (_items.containsKey(product.id)) {
@@ -35,6 +39,7 @@ class CartProvider with ChangeNotifier {
         product.id,
         (existingCartItem) => existingCartItem.copyWith(
           quantity: existingCartItem.quantity + quantity,
+          totalPrice: (existingCartItem.totalPrice ?? 0) + (totalPrice ?? (product.price * quantity))
         ),
       );
     } else {
@@ -47,6 +52,7 @@ class CartProvider with ChangeNotifier {
           quantity: quantity,
           imageUrl: product.imageUrl,
           unit: product.unit,
+          totalPrice: totalPrice,
         ),
       );
     }

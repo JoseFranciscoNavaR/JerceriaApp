@@ -84,14 +84,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final pesos = double.tryParse(_pesosController.text) ?? 0.0;
     final liters = pesos / widget.product.price;
     if (mounted) {
-      _litersController.text = liters.toStringAsFixed(3);
+      final truncatedLiters = (liters * 1000).truncate() / 1000;
+      _litersController.text = truncatedLiters.toStringAsFixed(3);
     }
   }
 
   void _addToCart() {
     final cart = Provider.of<CartProvider>(context, listen: false);
     if (_quantity > 0) {
-      cart.addItem(widget.product, _quantity);
+      double? totalPrice;
+      if (_isVolumetric) {
+        totalPrice = double.tryParse(_pesosController.text);
+      }
+      cart.addItem(widget.product, _quantity, totalPrice: totalPrice);
 
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -132,7 +137,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${_isVolumetric ? _quantity.toStringAsFixed(2) : _quantity.toStringAsFixed(0)} x ${widget.product.name}',
+                        '${_isVolumetric ? _quantity.toStringAsFixed(3) : _quantity.toStringAsFixed(0)} x ${widget.product.name}',
                         style: const TextStyle(color: Colors.white, fontSize: 14),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -360,8 +365,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         const SizedBox(height: 16),
         Text(
           _isVolumetric
-              ? 'MX\$${widget.product.price.toStringAsFixed(2)} / Litro'
-              : 'MX\$${widget.product.price.toStringAsFixed(2)}',
+              ? 'MX\$${widget.product.price.toStringAsFixed(2)} x Litro'
+              : 'MX\$${widget.product.price.toStringAsFixed(2)} x Pieza',
           style: theme.textTheme.headlineSmall?.copyWith(
             color: theme.primaryColor,
             fontWeight: FontWeight.bold,

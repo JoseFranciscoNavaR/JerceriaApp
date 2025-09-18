@@ -5,6 +5,7 @@ class CartItem {
   final double price;
   final String imageUrl;
   final String unit;
+  final double? totalPrice; // Add this line
 
   CartItem({
     required this.id,
@@ -13,10 +14,12 @@ class CartItem {
     required this.price,
     required this.imageUrl,
     required this.unit,
+    this.totalPrice, // Add this line
   });
 
   CartItem copyWith({
     double? quantity,
+    double? totalPrice,
   }) {
     return CartItem(
       id: id,
@@ -25,6 +28,7 @@ class CartItem {
       imageUrl: imageUrl,
       unit: unit,
       quantity: quantity ?? this.quantity,
+      totalPrice: totalPrice ?? this.totalPrice, // Add this line
     );
   }
 }
