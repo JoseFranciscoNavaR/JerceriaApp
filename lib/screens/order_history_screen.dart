@@ -68,13 +68,18 @@ class _OrderTicketItemState extends State<OrderTicketItem> {
       child: Column(
         children: <Widget>[
           ListTile(
-            contentPadding: const EdgeInsets.fromLTRB(16, 4, 12, 4),
+            leading: Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Icon(Icons.receipt_long_outlined, color: theme.primaryColor, size: 36),
+            ),
+            contentPadding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
             title: Text(
               'Total: \$${widget.order.totalAmount.toStringAsFixed(2)}',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             subtitle: Text(
               DateFormat('dd/MM/yyyy hh:mm a').format(widget.order.date),
+              style: TextStyle(color: Colors.grey[600]),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -108,49 +113,57 @@ class _OrderTicketItemState extends State<OrderTicketItem> {
             ),
           ),
           if (_expanded)
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              height: min(widget.order.products.length * 28.0 + 10, 120),
-              child: ListView(
-                children: widget.order.products.map((prod) {
-                  final isVolumetric = prod.unit == 'Lt';
-                  final String detailsText;
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              child: Column(
+                children: [
+                  const Divider(thickness: 1, height: 1),
+                  const SizedBox(height: 12),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    height: min(widget.order.products.length * 28.0 + 10, 120),
+                    child: ListView(
+                      children: widget.order.products.map((prod) {
+                        final isVolumetric = prod.unit == 'Lt';
+                        final String detailsText;
 
-                  if (isVolumetric) {
-                    final itemTotal = prod.totalPrice ?? (prod.quantity * prod.price);
-                    detailsText = '${prod.quantity.toStringAsFixed(3)} ${prod.unit} x MX\$${itemTotal.toStringAsFixed(2)}';
-                  } else {
-                    detailsText = '${prod.quantity.toStringAsFixed(0)} x MX\$${prod.price.toStringAsFixed(2)}';
-                  }
+                        if (isVolumetric) {
+                          final itemTotal = prod.totalPrice ?? (prod.quantity * prod.price);
+                          detailsText = '${prod.quantity.toStringAsFixed(3)} ${prod.unit} - \$${itemTotal.toStringAsFixed(2)}';
+                        } else {
+                          detailsText = '${prod.quantity.toStringAsFixed(0)} x \$${prod.price.toStringAsFixed(2)}';
+                        }
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(
-                            prod.name,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              Expanded(
+                                child: Text(
+                                  prod.name,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(
+                                detailsText,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.grey,
+                                ),
+                              )
+                            ],
                           ),
-                        ),
-                        Text(
-                          detailsText,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: Colors.grey,
-                          ),
-                        )
-                      ],
+                        );
+                      }).toList(),
                     ),
-                  );
-                }).toList(),
+                  ),
+                ],
               ),
             )
         ],
