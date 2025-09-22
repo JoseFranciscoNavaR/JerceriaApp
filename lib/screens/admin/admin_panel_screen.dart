@@ -4,7 +4,7 @@ import './admin_product_list_screen.dart';
 import './admin_category_list_screen.dart'; // Import the new screen
 
 class AdminPanelScreen extends StatelessWidget {
-  const AdminPanelScreen({Key? key}) : super(key: key);
+  const AdminPanelScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +64,7 @@ class AdminPanelScreen extends StatelessWidget {
             subtitle: 'Ver y gestionar los pedidos de los clientes',
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Funcionalidad de órdenes próximamente.')),
+                const SnackBar(content: Text('Funcionalidad de adminitrar órdenes próximamente.')),
               );
             },
           ),

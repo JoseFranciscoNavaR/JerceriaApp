@@ -7,11 +7,11 @@ class Badge extends StatelessWidget {
   final Color? color;  // El color de fondo de la insignia
 
   const Badge({
-    Key? key,
+    super.key,
     required this.child,
     required this.value,
     this.color,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

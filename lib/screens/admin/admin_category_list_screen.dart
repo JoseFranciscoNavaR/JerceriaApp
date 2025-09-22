@@ -6,7 +6,7 @@ import 'package:jarceria_app/services/database_service.dart';
 import './admin_edit_category_screen.dart';
 
 class AdminCategoryListScreen extends StatefulWidget {
-  const AdminCategoryListScreen({Key? key}) : super(key: key);
+  const AdminCategoryListScreen({super.key});
 
   @override
   _AdminCategoryListScreenState createState() => _AdminCategoryListScreenState();
@@ -220,7 +220,7 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
                               onChanged: (value) {
                                 _databaseService.updateCategoryAvailability(category.id, value);
                               },
-                              activeColor: Theme.of(context).colorScheme.primary,
+                              activeThumbColor: Theme.of(context).colorScheme.primary,
                               inactiveTrackColor: Colors.grey[300],
                               inactiveThumbColor: Colors.grey[600],
                             ),

@@ -6,7 +6,7 @@ import 'package:jarceria_app/providers/order_provider.dart';
 import 'package:jarceria_app/models/order_model.dart';
 
 class OrderHistoryScreen extends StatelessWidget {
-  const OrderHistoryScreen({Key? key}) : super(key: key);
+  const OrderHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +47,7 @@ class OrderHistoryScreen extends StatelessWidget {
 class OrderTicketItem extends StatefulWidget {
   final Order order;
 
-  const OrderTicketItem({Key? key, required this.order}) : super(key: key);
+  const OrderTicketItem({super.key, required this.order});
 
   @override
   _OrderTicketItemState createState() => _OrderTicketItemState();

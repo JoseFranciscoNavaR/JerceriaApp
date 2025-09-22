@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import './admin_panel_screen.dart';
 
 class AdminLoginScreen extends StatefulWidget {
-  const AdminLoginScreen({Key? key}) : super(key: key);
+  const AdminLoginScreen({super.key});
 
   @override
   _AdminLoginScreenState createState() => _AdminLoginScreenState();

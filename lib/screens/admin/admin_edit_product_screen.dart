@@ -7,7 +7,7 @@ import '../../services/database_service.dart';
 class AdminEditProductScreen extends StatefulWidget {
   final Product? product;
 
-  const AdminEditProductScreen({Key? key, this.product}) : super(key: key);
+  const AdminEditProductScreen({super.key, this.product});
 
   @override
   _AdminEditProductScreenState createState() => _AdminEditProductScreenState();
@@ -184,7 +184,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                         _isSoldByVolume = value;
                       });
                     },
-                    activeColor: Theme.of(context).colorScheme.primary,
+                    activeThumbColor: Theme.of(context).colorScheme.primary,
                     inactiveTrackColor: Colors.grey[300],
                     inactiveThumbColor: Colors.grey[600],
                     contentPadding: EdgeInsets.zero,
@@ -197,7 +197,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                         _isAvailable = value;
                       });
                     },
-                    activeColor: Theme.of(context).colorScheme.primary,
+                    activeThumbColor: Theme.of(context).colorScheme.primary,
                     inactiveTrackColor: Colors.grey[300],
                     inactiveThumbColor: Colors.grey[600],
                     contentPadding: EdgeInsets.zero,
@@ -227,7 +227,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
 
   Widget _buildCategoryDropdown() {
     return DropdownButtonFormField<String>(
-      value: _selectedCategoryId,
+      initialValue: _selectedCategoryId,
       decoration: InputDecoration(
         labelText: 'Categoría',
         filled: true,

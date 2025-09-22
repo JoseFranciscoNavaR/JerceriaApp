@@ -6,7 +6,7 @@ import '../../services/database_service.dart';
 class AdminEditCategoryScreen extends StatefulWidget {
   final Category? category;
 
-  const AdminEditCategoryScreen({Key? key, this.category}) : super(key: key);
+  const AdminEditCategoryScreen({super.key, this.category});
 
   @override
   _AdminEditCategoryScreenState createState() => _AdminEditCategoryScreenState();
@@ -119,7 +119,7 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
                         _isAvailable = value;
                       });
                     },
-                    activeColor: Theme.of(context).colorScheme.primary,
+                    activeThumbColor: Theme.of(context).colorScheme.primary,
                     inactiveTrackColor: Colors.grey[300],
                     inactiveThumbColor: Colors.grey[600],
                     contentPadding: EdgeInsets.zero,

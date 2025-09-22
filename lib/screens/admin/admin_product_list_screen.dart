@@ -6,7 +6,7 @@ import '../../services/database_service.dart';
 import './admin_edit_product_screen.dart';
 
 class AdminProductListScreen extends StatefulWidget {
-  const AdminProductListScreen({Key? key}) : super(key: key);
+  const AdminProductListScreen({super.key});
 
   @override
   _AdminProductListScreenState createState() => _AdminProductListScreenState();
@@ -217,7 +217,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                                 product.isAvailable = value;
                                 _databaseService.updateProduct(product);
                               },
-                              activeColor: Theme.of(context).colorScheme.primary,
+                              activeThumbColor: Theme.of(context).colorScheme.primary,
                               inactiveTrackColor: Colors.grey[300],
                               inactiveThumbColor: Colors.grey[600],
                             ),

@@ -13,7 +13,7 @@ class ProductDetailScreen extends StatefulWidget {
   static const routeName = '/product-detail';
   final Product product;
 
-  const ProductDetailScreen({Key? key, required this.product}) : super(key: key);
+  const ProductDetailScreen({super.key, required this.product});
 
   @override
   _ProductDetailScreenState createState() => _ProductDetailScreenState();

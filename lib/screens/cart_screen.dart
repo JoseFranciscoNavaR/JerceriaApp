@@ -7,7 +7,7 @@ import 'package:jarceria_app/models/product_model.dart';
 import 'package:jarceria_app/models/cart_item_model.dart';
 
 class CartScreen extends StatelessWidget {
-  const CartScreen({Key? key}) : super(key: key);
+  const CartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +121,7 @@ class CartScreen extends StatelessWidget {
 class CartListItem extends StatelessWidget {
   final CartItem cartItem;
 
-  const CartListItem({Key? key, required this.cartItem}) : super(key: key);
+  const CartListItem({super.key, required this.cartItem});
 
   @override
   Widget build(BuildContext context) {

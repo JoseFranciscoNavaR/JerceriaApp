@@ -13,7 +13,7 @@ import './order_history_screen.dart';
 import 'package:badges/badges.dart' as badges;
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -108,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class ProductsGrid extends StatefulWidget {
-  const ProductsGrid({Key? key}) : super(key: key);
+  const ProductsGrid({super.key});
 
   @override
   _ProductsGridState createState() => _ProductsGridState();
