@@ -5,12 +5,15 @@ import 'dart:math';
 import 'package:jarceria_app/providers/order_provider.dart';
 import 'package:jarceria_app/models/order_model.dart';
 
-class OrderHistoryScreen extends StatelessWidget {
-  const OrderHistoryScreen({super.key});
+class AdminOrderListScreen extends StatelessWidget {
+  const AdminOrderListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Administrar Órdenes'),
+      ),
       body: Consumer<OrderProvider>(
         builder: (ctx, orderData, child) {
           if (orderData.orders.isEmpty) {
@@ -21,12 +24,12 @@ class OrderHistoryScreen extends StatelessWidget {
                   Icon(Icons.receipt_long_outlined, size: 100, color: Colors.grey[300]),
                   const SizedBox(height: 20),
                   Text(
-                    'No tienes órdenes aún',
+                    'No hay órdenes para administrar',
                     style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Tus compras aparecerán aquí',
+                    'Las nuevas compras aparecerán aquí',
                     style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                   ),
                 ],
@@ -84,29 +87,12 @@ class _OrderTicketItemState extends State<OrderTicketItem> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (widget.order.isNew)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: theme.primaryColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text(
-                      'Nuevo',
-                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                const SizedBox(width: 8),
                 IconButton(
                   icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more, size: 28),
                   onPressed: () {
                     setState(() {
                       _expanded = !_expanded;
                     });
-                    if (widget.order.isNew) {
-                      Provider.of<OrderProvider>(context, listen: false)
-                          .markOrderAsRead(widget.order.id);
-                    }
                   },
                 ),
               ],

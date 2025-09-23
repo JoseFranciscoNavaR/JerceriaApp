@@ -12,20 +12,22 @@ class CartProvider with ChangeNotifier {
   }
 
   double get totalQuantity {
-      double total = 0;
-      _items.forEach((key, cartItem) {
-        total += cartItem.quantity;
-      });
-      return total;
+    double total = 0;
+    _items.forEach((key, cartItem) {
+      total += cartItem.quantity;
+    });
+    return total;
   }
 
   double get totalAmount {
     var total = 0.0;
     _items.forEach((key, cartItem) {
-      if (cartItem.totalPrice != null) {
-        total += cartItem.totalPrice!;
-      } else {
+      // For items sold by piece ('Pz'), always calculate price * quantity
+      if (cartItem.unit == 'Pz') {
         total += cartItem.price * cartItem.quantity;
+      } else {
+        // For volumetric items ('Lt'), use the pre-calculated totalPrice if available
+        total += cartItem.totalPrice ?? (cartItem.price * cartItem.quantity);
       }
     });
     return total;
@@ -37,10 +39,22 @@ class CartProvider with ChangeNotifier {
     if (_items.containsKey(product.id)) {
       _items.update(
         product.id,
-        (existingCartItem) => existingCartItem.copyWith(
-          quantity: existingCartItem.quantity + quantity,
-          totalPrice: (existingCartItem.totalPrice ?? 0) + (totalPrice ?? (product.price * quantity))
-        ),
+        (existingCartItem) {
+          final newQuantity = existingCartItem.quantity + quantity;
+          double? newTotalPrice;
+
+          // Only calculate and update totalPrice for volumetric items
+          if (existingCartItem.unit == 'Lt') {
+            newTotalPrice = (existingCartItem.totalPrice ?? (existingCartItem.price * existingCartItem.quantity)) +
+                            (totalPrice ?? (product.price * quantity));
+          }
+          
+          return existingCartItem.copyWith(
+            quantity: newQuantity,
+            // Keep totalPrice null for non-volumetric items
+            totalPrice: existingCartItem.unit == 'Lt' ? newTotalPrice : null,
+          );
+        },
       );
     } else {
       _items.putIfAbsent(
@@ -52,7 +66,8 @@ class CartProvider with ChangeNotifier {
           quantity: quantity,
           imageUrl: product.imageUrl,
           unit: product.unit,
-          totalPrice: totalPrice,
+          // Only set totalPrice for volumetric items on initial add
+          totalPrice: product.unit == 'Lt' ? totalPrice : null,
         ),
       );
     }
@@ -68,7 +83,14 @@ class CartProvider with ChangeNotifier {
     final double newQuantity = existingItem.quantity - decrementAmount;
 
     if (newQuantity > 0.001) { // Use tolerance for float comparison
-      _items.update(productId, (item) => item.copyWith(quantity: newQuantity));
+      _items.update(productId, (item) {
+        return item.copyWith(
+          quantity: newQuantity,
+          // For non-volumetric items, the total is calculated in totalAmount getter
+          // For volumetric, let's recalculate based on new quantity for consistency
+          totalPrice: isVolumetric ? (item.price * newQuantity) : null,
+        );
+      });
     } else {
       _items.remove(productId);
     }
@@ -79,7 +101,13 @@ class CartProvider with ChangeNotifier {
     if (!_items.containsKey(productId)) return;
 
     if (newQuantity > 0) {
-      _items.update(productId, (item) => item.copyWith(quantity: newQuantity));
+      _items.update(productId, (item) {
+        return item.copyWith(
+          quantity: newQuantity,
+          // Recalculate totalPrice only for volumetric items
+          totalPrice: item.unit == 'Lt' ? (item.price * newQuantity) : null,
+        );
+      });
     } else {
       _items.remove(productId);
     }

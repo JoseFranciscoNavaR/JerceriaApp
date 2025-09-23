@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../home_screen.dart';
 import './admin_product_list_screen.dart';
-import './admin_category_list_screen.dart'; // Import the new screen
+import './admin_category_list_screen.dart'; 
+import './admin_order_list_screen.dart';
 
 class AdminPanelScreen extends StatelessWidget {
   const AdminPanelScreen({super.key});
@@ -63,8 +64,8 @@ class AdminPanelScreen extends StatelessWidget {
             title: 'Administrar Órdenes',
             subtitle: 'Ver y gestionar los pedidos de los clientes',
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Funcionalidad de adminitrar órdenes próximamente.')),
+               Navigator.of(context).push(
+                MaterialPageRoute(builder: (ctx) => const AdminOrderListScreen()),
               );
             },
           ),
