@@ -74,7 +74,7 @@ class _OrderTicketItemState extends State<OrderTicketItem> {
             ),
             contentPadding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
             title: Text(
-              'Total: \$${widget.order.totalAmount.toStringAsFixed(2)}',
+              'Total: MX\$${widget.order.totalAmount.toStringAsFixed(2)}',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             subtitle: Text(
@@ -130,9 +130,9 @@ class _OrderTicketItemState extends State<OrderTicketItem> {
 
                         if (isVolumetric) {
                           final itemTotal = prod.totalPrice ?? (prod.quantity * prod.price);
-                          detailsText = '${prod.quantity.toStringAsFixed(3)} ${prod.unit} - \$${itemTotal.toStringAsFixed(2)}';
+                          detailsText = '${prod.quantity.toStringAsFixed(3)} ${prod.unit} x MX\$${itemTotal.toStringAsFixed(2)}';
                         } else {
-                          detailsText = '${prod.quantity.toStringAsFixed(0)} x \$${prod.price.toStringAsFixed(2)}';
+                          detailsText = '${prod.quantity.toStringAsFixed(0)} Pz x MX\$${prod.price.toStringAsFixed(2)}';
                         }
 
                         return Padding(
