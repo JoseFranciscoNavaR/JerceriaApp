@@ -276,7 +276,7 @@ class _ProductsGridState extends State<ProductsGrid> {
           child: ValueListenableBuilder(
             valueListenable: Hive.box<Product>('products').listenable(),
             builder: (context, Box<Product> box, _) {
-              var products = box.values.toList().cast<Product>();
+              var products = box.values.where((p) => p.isAvailable).toList();
 
               if (_selectedCategoryId != null) {
                 products = products.where((p) => p.categoryId == _selectedCategoryId).toList();
