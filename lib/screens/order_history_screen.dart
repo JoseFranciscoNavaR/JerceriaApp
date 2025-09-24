@@ -11,6 +11,7 @@ class OrderHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       body: Consumer<OrderProvider>(
         builder: (ctx, orderData, child) {
           if (orderData.orders.isEmpty) {
