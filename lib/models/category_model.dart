@@ -1,16 +1,8 @@
-import 'package:hive/hive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-part 'category_model.g.dart';
-
-@HiveType(typeId: 1)
-class Category extends HiveObject {
-  @HiveField(0)
+class Category {
   String id;
-
-  @HiveField(1)
   String name;
-
-  @HiveField(2)
   bool isAvailable;
 
   Category({
@@ -18,4 +10,22 @@ class Category extends HiveObject {
     required this.name,
     this.isAvailable = true,
   });
+
+  // Convert a Category object into a map for Firestore
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'isAvailable': isAvailable,
+    };
+  }
+
+  // Create a Category object from a Firestore document
+  factory Category.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return Category(
+      id: doc.id,
+      name: data['name'] ?? '',
+      isAvailable: data['isAvailable'] ?? true,
+    );
+  }
 }

@@ -1,40 +1,20 @@
-import 'package:hive/hive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-part 'product_model.g.dart';
-
-@HiveType(typeId: 0)
-class Product extends HiveObject {
-  @HiveField(0)
+class Product {
   String id;
-
-  @HiveField(1)
   String name;
-
-  @HiveField(2)
-  String description;
-
-  @HiveField(3)
+  String? description;
   double price;
-
-  @HiveField(4)
   String imageUrl;
-
-  @HiveField(5)
   bool isAvailable;
-
-  @HiveField(6)
   String unit;
-
-  @HiveField(7)
-  String? brand; // Opcional
-
-  @HiveField(8)
+  String? brand;
   String categoryId;
 
   Product({
     required this.id,
     required this.name,
-    required this.description,
+    this.description,
     required this.price,
     required this.imageUrl,
     this.isAvailable = true,
@@ -42,4 +22,34 @@ class Product extends HiveObject {
     this.brand,
     required this.categoryId,
   });
+
+  // Convert a Product object into a map for Firestore
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'description': description,
+      'price': price,
+      'imageUrl': imageUrl,
+      'isAvailable': isAvailable,
+      'unit': unit,
+      'brand': brand,
+      'categoryId': categoryId,
+    };
+  }
+
+  // Create a Product object from a Firestore document
+  factory Product.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return Product(
+      id: doc.id,
+      name: data['name'] ?? '',
+      description: data['description'],
+      price: (data['price'] ?? 0).toDouble(),
+      imageUrl: data['imageUrl'] ?? '',
+      isAvailable: data['isAvailable'] ?? true,
+      unit: data['unit'] ?? 'Pz',
+      brand: data['brand'],
+      categoryId: data['categoryId'] ?? '',
+    );
+  }
 }

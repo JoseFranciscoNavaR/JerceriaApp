@@ -5,50 +5,80 @@ import 'package:jarceria_app/providers/cart_provider.dart';
 import 'package:jarceria_app/providers/order_provider.dart';
 import 'package:jarceria_app/models/product_model.dart';
 import 'package:jarceria_app/models/cart_item_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:jarceria_app/screens/user_login_screen.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<CartProvider>(
-      builder: (ctx, cart, _) {
-        final cartItems = cart.items.values.toList();
+    return StreamBuilder(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (ctx, userSnapshot) {
+        if (userSnapshot.hasData) {
+          return Consumer<CartProvider>(
+            builder: (ctx, cart, _) {
+              final cartItems = cart.items.values.toList();
 
-        if (cartItems.isEmpty) {
+              if (cartItems.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.remove_shopping_cart_outlined, size: 100, color: Colors.grey[300]),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Tu carrito está vacío',
+                        style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Añade productos para verlos aquí',
+                        style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return Column(
+                children: <Widget>[
+                  _buildSummaryCard(context, cart),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: cartItems.length,
+                      itemBuilder: (ctx, i) => CartListItem(
+                        cartItem: cartItems[i],
+                      ),
+                    ),
+                  )
+                ],
+              );
+            },
+          );
+        } else {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.remove_shopping_cart_outlined, size: 100, color: Colors.grey[300]),
+                Icon(Icons.lock_outline, size: 100, color: Colors.grey[300]),
                 const SizedBox(height: 20),
                 Text(
-                  'Tu carrito está vacío',
+                  'Inicia sesión para ver tu carrito',
                   style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Añade productos para verlos aquí',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const UserLoginScreen()));
+                  },
+                  child: const Text('Ir a la pantalla de inicio de sesión'),
                 ),
               ],
             ),
           );
         }
-
-        return Column(
-          children: <Widget>[
-            _buildSummaryCard(context, cart),
-            Expanded(
-              child: ListView.builder(
-                itemCount: cartItems.length,
-                itemBuilder: (ctx, i) => CartListItem(
-                  cartItem: cartItems[i],
-                ),
-              ),
-            )
-          ],
-        );
       },
     );
   }
@@ -180,7 +210,7 @@ class CartListItem extends StatelessWidget {
       key: ValueKey(cartItem.id),
       background: Container(
         decoration: BoxDecoration(
-          color: theme.colorScheme.error.withOpacity(0.8),
+          color: theme.colorScheme.error.withAlpha(204),
           borderRadius: BorderRadius.circular(10),
         ),
         alignment: Alignment.centerRight,

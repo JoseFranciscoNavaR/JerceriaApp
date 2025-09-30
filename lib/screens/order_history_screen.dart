@@ -4,44 +4,84 @@ import 'package:intl/intl.dart';
 import 'dart:math';
 import 'package:jarceria_app/providers/order_provider.dart';
 import 'package:jarceria_app/models/order_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:jarceria_app/screens/user_login_screen.dart';
 
 class OrderHistoryScreen extends StatelessWidget {
   const OrderHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Consumer<OrderProvider>(
-        builder: (ctx, orderData, child) {
-          if (orderData.orders.isEmpty) {
+    return StreamBuilder(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (ctx, userSnapshot) {
+          if (userSnapshot.hasData) {
+            return Scaffold(
+              backgroundColor: Colors.grey[50],
+              body: Consumer<OrderProvider>(
+                builder: (ctx, orderData, child) {
+                  if (orderData.orders.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.receipt_long_outlined,
+                              size: 100, color: Colors.grey[300]),
+                          const SizedBox(height: 20),
+                          Text(
+                            'No tienes órdenes aún',
+                            style: TextStyle(
+                                fontSize: 22,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w300),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tus compras aparecerán aquí',
+                            style: TextStyle(
+                                fontSize: 16, color: Colors.grey[500]),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.only(top: 8, bottom: 8),
+                    itemCount: orderData.orders.length,
+                    itemBuilder: (ctx, i) =>
+                        OrderTicketItem(order: orderData.orders[i]),
+                  );
+                },
+              ),
+            );
+          } else {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.receipt_long_outlined, size: 100, color: Colors.grey[300]),
+                  Icon(Icons.lock_outline, size: 100, color: Colors.grey[300]),
                   const SizedBox(height: 20),
                   Text(
-                    'No tienes órdenes aún',
-                    style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
+                    'Inicia sesión para ver tu historial de órdenes',
+                    style: TextStyle(
+                        fontSize: 22,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w300),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tus compras aparecerán aquí',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (ctx) => const UserLoginScreen()));
+                    },
+                    child: const Text('Ir a la pantalla de inicio de sesión'),
                   ),
                 ],
               ),
             );
           }
-          return ListView.builder(
-            padding: const EdgeInsets.only(top: 8, bottom: 8),
-            itemCount: orderData.orders.length,
-            itemBuilder: (ctx, i) => OrderTicketItem(order: orderData.orders[i]),
-          );
-        },
-      ),
-    );
+        });
   }
 }
 
@@ -51,10 +91,10 @@ class OrderTicketItem extends StatefulWidget {
   const OrderTicketItem({super.key, required this.order});
 
   @override
-  _OrderTicketItemState createState() => _OrderTicketItemState();
+  OrderTicketItemState createState() => OrderTicketItemState();
 }
 
-class _OrderTicketItemState extends State<OrderTicketItem> {
+class OrderTicketItemState extends State<OrderTicketItem> {
   var _expanded = false;
 
   @override
@@ -71,7 +111,8 @@ class _OrderTicketItemState extends State<OrderTicketItem> {
           ListTile(
             leading: Padding(
               padding: const EdgeInsets.only(top: 4.0),
-              child: Icon(Icons.receipt_long_outlined, color: theme.primaryColor, size: 36),
+              child: Icon(Icons.receipt_long_outlined,
+                  color: theme.primaryColor, size: 36),
             ),
             contentPadding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
             title: Text(
@@ -87,19 +128,24 @@ class _OrderTicketItemState extends State<OrderTicketItem> {
               children: [
                 if (widget.order.isNew)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: theme.primaryColor,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Text(
                       'Nuevo',
-                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold),
                     ),
                   ),
                 const SizedBox(width: 8),
                 IconButton(
-                  icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more, size: 28),
+                  icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more,
+                      size: 28),
                   onPressed: () {
                     setState(() {
                       _expanded = !_expanded;
@@ -130,11 +176,14 @@ class _OrderTicketItemState extends State<OrderTicketItem> {
                         final String detailsText;
 
                         if (isVolumetric) {
-                          final itemTotal = prod.totalPrice ?? (prod.quantity * prod.price);
-                          detailsText = '${prod.quantity.toStringAsFixed(3)} ${prod.unit} x MX\$${itemTotal.toStringAsFixed(2)}';
+                          final itemTotal =
+                              prod.totalPrice ?? (prod.quantity * prod.price);
+                          detailsText = 
+                              '${prod.quantity.toStringAsFixed(3)} ${prod.unit} x MX\$${itemTotal.toStringAsFixed(2)}';
                         } else {
-                           final itemTotal = prod.price * prod.quantity;
-                          detailsText = '${prod.quantity.toStringAsFixed(0)} Pz x MX\$${itemTotal.toStringAsFixed(2)}';
+                          final itemTotal = prod.price * prod.quantity;
+                          detailsText =
+                              '${prod.quantity.toStringAsFixed(0)} Pz x MX\$${itemTotal.toStringAsFixed(2)}';
                         }
 
                         return Padding(

@@ -10,10 +10,10 @@ class AdminOrderListScreen extends StatefulWidget {
   const AdminOrderListScreen({super.key});
 
   @override
-  _AdminOrderListScreenState createState() => _AdminOrderListScreenState();
+  AdminOrderListScreenState createState() => AdminOrderListScreenState();
 }
 
-class _AdminOrderListScreenState extends State<AdminOrderListScreen> {
+class AdminOrderListScreenState extends State<AdminOrderListScreen> {
   String _searchQuery = '';
   DateTimeRange? _selectedDateRange;
   String _sortOrder = 'Más Recientes'; 
@@ -193,10 +193,10 @@ class OrderTicketItem extends StatefulWidget {
   const OrderTicketItem({super.key, required this.order});
 
   @override
-  _OrderTicketItemState createState() => _OrderTicketItemState();
+  OrderTicketItemState createState() => OrderTicketItemState();
 }
 
-class _OrderTicketItemState extends State<OrderTicketItem> {
+class OrderTicketItemState extends State<OrderTicketItem> {
   var _expanded = false;
 
   @override

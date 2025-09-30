@@ -1,41 +1,56 @@
-import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:jarceria_app/models/category_model.dart';
-import 'package:jarceria_app/services/database_service.dart';
 import './admin_edit_category_screen.dart';
 
 class AdminCategoryListScreen extends StatefulWidget {
   const AdminCategoryListScreen({super.key});
 
   @override
-  _AdminCategoryListScreenState createState() => _AdminCategoryListScreenState();
+  AdminCategoryListScreenState createState() => AdminCategoryListScreenState();
 }
 
-class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
-  final DatabaseService _databaseService = DatabaseService();
+class AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
   String _searchQuery = '';
-  String _sortOrder = 'available_first'; // Default sort order
-  Timer? _debounce;
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    super.dispose();
-  }
+  String _sortOrder = 'name_asc'; // Default sort order
 
   void _navigateToEditScreen(BuildContext context, {Category? category}) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (ctx) => AdminEditCategoryScreen(category: category)),
+      MaterialPageRoute(
+        builder: (ctx) => AdminEditCategoryScreen(category: category),
+      ),
     );
   }
 
-  void _showDisableConfirmationDialog(BuildContext context, Category category) {
+  Future<void> _updateCategoryAvailability(Category category, bool isAvailable) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('categories')
+          .doc(category.id)
+          .update({'isAvailable': isAvailable});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isAvailable ? 'Categoría Habilitada' : 'Categoría Deshabilitada'),
+          backgroundColor: isAvailable ? Colors.green : Colors.orangeAccent,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al actualizar: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context, Category category) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Deshabilitación'),
-        content: const Text('¿Estás seguro de que quieres deshabilitar esta categoría? Los productos asociados no serán visibles para los clientes.'),
+        title: const Text('Confirmar Eliminación'),
+        content: const Text(
+            '¿Estás seguro de que quieres eliminar esta categoría? Esta acción es permanente y no se puede deshacer. Los productos de esta categoría no serán eliminados, pero quedarán sin categoría.'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: <Widget>[
           TextButton(
@@ -45,17 +60,31 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
             },
           ),
           TextButton(
-            child: Text('Sí, Deshabilitar', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            onPressed: () {
-              _databaseService.updateCategoryAvailability(category.id, false);
-              Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Categoría deshabilitada.'),
-                  backgroundColor: Colors.orangeAccent,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+            child: Text('Sí, Eliminar',
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            onPressed: () async {
+              try {
+                await FirebaseFirestore.instance
+                    .collection('categories')
+                    .doc(category.id)
+                    .delete();
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Categoría eliminada permanentemente.'),
+                    backgroundColor: Colors.redAccent,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              } catch (e) {
+                 Navigator.of(ctx).pop();
+                 ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error al eliminar: $e'),
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                );
+              }
             },
           ),
         ],
@@ -70,7 +99,8 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Administrar Categorías', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Administrar Categorías',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -95,11 +125,8 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
                       ),
                     ),
                     onChanged: (value) {
-                      if (_debounce?.isActive ?? false) _debounce!.cancel();
-                      _debounce = Timer(const Duration(milliseconds: 500), () {
-                        setState(() {
-                          _searchQuery = value;
-                        });
+                      setState(() {
+                        _searchQuery = value;
                       });
                     },
                   ),
@@ -112,11 +139,8 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
                     });
                   },
                   icon: Icon(Icons.sort, color: Colors.grey[600]),
-                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                    const PopupMenuItem<String>(
-                      value: 'available_first',
-                      child: Text('Ordenar por disponibilidad'),
-                    ),
+                  itemBuilder: (BuildContext context) =>
+                      <PopupMenuEntry<String>>[
                     const PopupMenuItem<String>(
                       value: 'name_asc',
                       child: Text('Ordenar por nombre (A-Z)'),
@@ -125,36 +149,67 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
                       value: 'name_desc',
                       child: Text('Ordenar por nombre (Z-A)'),
                     ),
+                    const PopupMenuItem<String>(
+                      value: 'available_first',
+                      child: Text('Disponibles primero'),
+                    ),
+                     const PopupMenuItem<String>(
+                      value: 'disabled_first',
+                      child: Text('Deshabilitados primero'),
+                    ),
                   ],
                 ),
                 IconButton(
-                  icon: Icon(Icons.add_circle_outline, color: primaryColor, size: 28),
+                  icon: Icon(Icons.add_circle_outline,
+                      color: primaryColor, size: 28),
                   onPressed: () => _navigateToEditScreen(context),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: ValueListenableBuilder(
-              valueListenable: Hive.box<Category>('categories').listenable(),
-              builder: (context, Box<Category> box, _) {
-                //var categories = box.values.where((c) => c != null).toList().cast<Category>();
-                var categories = box.values.whereType<Category>().toList();
-                if (_searchQuery.isNotEmpty) {
-                  categories = categories.where((category) => category.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('categories').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Error al cargar los datos'));
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Text('No hay categorías. ¡Añade una!'),
+                  );
                 }
 
-                // Sorting logic based on _sortOrder
+                var categories = snapshot.data!.docs
+                    .map((doc) => Category.fromFirestore(doc))
+                    .toList();
+
+                if (_searchQuery.isNotEmpty) {
+                  categories = categories
+                      .where((category) => category.name
+                          .toLowerCase()
+                          .contains(_searchQuery.toLowerCase()))
+                      .toList();
+                }
+
+                // Sorting logic
                 categories.sort((a, b) {
                   switch (_sortOrder) {
-                    case 'available_first':
-                      if (a.isAvailable && !b.isAvailable) return -1;
-                      if (!a.isAvailable && b.isAvailable) return 1;
-                      return a.name.compareTo(b.name);
                     case 'name_asc':
                       return a.name.compareTo(b.name);
                     case 'name_desc':
                       return b.name.compareTo(a.name);
+                    case 'available_first':
+                       if (a.isAvailable && !b.isAvailable) return -1;
+                       if (!a.isAvailable && b.isAvailable) return 1;
+                       return a.name.compareTo(b.name);
+                    case 'disabled_first':
+                       if (!a.isAvailable && b.isAvailable) return -1;
+                       if (a.isAvailable && !b.isAvailable) return 1;
+                       return a.name.compareTo(b.name);
                     default:
                       return a.name.compareTo(b.name);
                   }
@@ -165,51 +220,51 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.category_outlined, size: 100, color: Colors.grey[300]),
+                        Icon(Icons.search_off, size: 100, color: Colors.grey[300]),
                         const SizedBox(height: 20),
-                        Text(
-                          _searchQuery.isEmpty ? 'No hay categorías' : 'No se encontraron categorías',
-                          style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
-                        ),
-                        if (_searchQuery.isNotEmpty)
-                          Text(
-                            'Intenta con otra búsqueda',
-                            style: TextStyle(fontSize: 16, color: Colors.grey[500]),
-                          ),
+                        Text('No se encontraron categorías', style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300)),
                       ],
                     ),
                   );
                 }
 
                 return ListView.builder(
-                  key: const PageStorageKey<String>('category_list'), // Preserve scroll position
                   padding: const EdgeInsets.all(8.0),
                   itemCount: categories.length,
                   itemBuilder: (ctx, index) {
                     final category = categories[index];
                     return Card(
-                      key: ValueKey(category.id), // Essential for stateful updates in lists
-                      elevation: category.isAvailable ? 2.0 : 0.5,
-                      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      color: category.isAvailable ? Colors.white : Colors.white,
+                      elevation: 2.0,
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 8.0, horizontal: 8.0),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 8.0),
                         leading: CircleAvatar(
                           radius: 30,
-                          backgroundColor: category.isAvailable ? primaryColor.withOpacity(0.1) : Colors.grey[200],
+                          backgroundColor: category.isAvailable
+                              ? primaryColor.withAlpha(26)
+                              : Colors.grey[200],
                           child: Icon(
                             Icons.category,
                             size: 30,
-                            color: category.isAvailable ? primaryColor : Colors.grey[500],
+                            color: category.isAvailable
+                                ? primaryColor
+                                : Colors.grey[500],
                           ),
                         ),
                         title: Text(
                           category.name,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: category.isAvailable ? Colors.black87 : Colors.grey[500],
-                            decoration: !category.isAvailable ? TextDecoration.lineThrough : TextDecoration.none,
+                            color: category.isAvailable
+                                ? Colors.black87
+                                : Colors.grey[500],
+                            decoration: !category.isAvailable
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
                           ),
                         ),
                         trailing: Row(
@@ -218,19 +273,23 @@ class _AdminCategoryListScreenState extends State<AdminCategoryListScreen> {
                             Switch(
                               value: category.isAvailable,
                               onChanged: (value) {
-                                _databaseService.updateCategoryAvailability(category.id, value);
+                                _updateCategoryAvailability(category, value);
                               },
-                              activeThumbColor: Theme.of(context).colorScheme.primary,
-                              inactiveTrackColor: Colors.grey[300],
-                              inactiveThumbColor: Colors.grey[600],
+                              activeThumbColor: primaryColor,
+                              inactiveThumbColor: Colors.grey,
+                              inactiveTrackColor: Colors.grey.shade300,
                             ),
                             IconButton(
-                              icon: Icon(Icons.edit_outlined, color: Colors.grey[600]),
-                              onPressed: () => _navigateToEditScreen(context, category: category),
+                              icon: Icon(Icons.edit_outlined,
+                                  color: Colors.grey[600]),
+                              onPressed: () =>
+                                  _navigateToEditScreen(context, category: category),
                             ),
                             IconButton(
-                              icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                              onPressed: () => _showDisableConfirmationDialog(context, category),
+                              icon: Icon(Icons.delete_outline,
+                                  color: Theme.of(context).colorScheme.error),
+                              onPressed: () =>
+                                  _showDeleteConfirmationDialog(context, category),
                             ),
                           ],
                         ),

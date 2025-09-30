@@ -1,32 +1,44 @@
-
 import 'package:flutter/material.dart';
-import './admin_panel_screen.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../generated/app_localizations.dart';
+import 'home_screen.dart';
 
-class AdminLoginScreen extends StatefulWidget {
-  const AdminLoginScreen({super.key});
+class UserSignupScreen extends StatefulWidget {
+  const UserSignupScreen({super.key});
 
   @override
-  AdminLoginScreenState createState() => AdminLoginScreenState();
+  UserSignupScreenState createState() => UserSignupScreenState();
 }
 
-class AdminLoginScreenState extends State<AdminLoginScreen> {
+class UserSignupScreenState extends State<UserSignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _username = '';
+  String _email = '';
   String _password = '';
+  String? _errorMessage;
 
-  void _tryLogin() {
+  Future<void> _trySignUp() async {
     final isValid = _formKey.currentState?.validate() ?? false;
-    if (isValid) {
-      _formKey.currentState?.save();
-
-      if (_username == 'admin' && _password == 'admin') {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const AdminPanelScreen()),
-        );
-      } else {
+    if (!isValid) {
+      return;
+    }
+    _formKey.currentState?.save();
+    try {
+      await Provider.of<AuthProvider>(context, listen: false)
+          .createUserWithEmailAndPassword(_email, _password);
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            (Route<dynamic> route) => false);
+      }
+    } catch (error) {
+      setState(() {
+        _errorMessage = AppLocalizations.of(context)!.signupFailed;
+      });
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Usuario o contraseña incorrectos'),
+            content: Text(_errorMessage!),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -36,10 +48,12 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Acceso de Administrador', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(l10n.signup, style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -62,13 +76,13 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       Icon(
-                        Icons.admin_panel_settings_outlined,
+                        Icons.person_add_alt_1_outlined,
                         size: 80,
                         color: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'Iniciar Sesión',
+                        l10n.signup,
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -77,19 +91,20 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
                       ),
                       const SizedBox(height: 30),
                       TextFormField(
-                        key: const ValueKey('username'),
+                        key: const ValueKey('email'),
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor, ingrese un usuario.';
+                          if (value == null || !value.contains('@')) {
+                            return l10n.invalidEmail;
                           }
                           return null;
                         },
                         onSaved: (value) {
-                          _username = value!;
+                          _email = value ?? '';
                         },
+                        keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          hintText: 'Usuario',
-                          prefixIcon: const Icon(Icons.person_outline, color: Colors.grey),
+                          hintText: l10n.email,
+                          prefixIcon: const Icon(Icons.email_outlined, color: Colors.grey),
                           filled: true,
                           fillColor: Colors.white,
                           border: OutlineInputBorder(
@@ -102,17 +117,17 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
                       TextFormField(
                         key: const ValueKey('password'),
                         validator: (value) {
-                          if (value == null || value.length < 5) {
-                            return 'La contraseña debe tener al menos 5 caracteres.';
+                          if (value == null || value.length < 7) {
+                            return l10n.passwordTooShort;
                           }
                           return null;
                         },
                         onSaved: (value) {
-                          _password = value!;
+                          _password = value ?? '';
                         },
                         obscureText: true,
                         decoration: InputDecoration(
-                          hintText: 'Contraseña',
+                          hintText: l10n.password,
                           prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
                           filled: true,
                           fillColor: Colors.white,
@@ -126,7 +141,7 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _tryLogin,
+                          onPressed: _trySignUp,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Theme.of(context).colorScheme.primary,
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -134,9 +149,9 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          child: const Text(
-                            'Iniciar Sesión',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          child: Text(
+                            l10n.signup,
+                            style: const TextStyle(fontSize: 18, color: Colors.white),
                           ),
                         ),
                       ),

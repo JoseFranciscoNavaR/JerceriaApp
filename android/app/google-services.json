@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "768200284790",
+    "project_id": "jarceriaapp",
+    "storage_bucket": "jarceriaapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:768200284790:android:a3c3317987927f428b1d57",
+        "android_client_info": {
+          "package_name": "com.example.jarceria_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "768200284790-q4hhsohtm14559dvu0jpg7rtaqfq0q6n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3Qf2A62oOjh1cGr0ODpmIFj4fs2EJn3c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "768200284790-q4hhsohtm14559dvu0jpg7rtaqfq0q6n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "768200284790-68nosub2q2qtasubc47d4ts7j1qbdg01.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.jarceriaApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

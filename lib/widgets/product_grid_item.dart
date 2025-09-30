@@ -80,7 +80,7 @@ class ProductGridItem extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    product.description,
+                    product.description ?? '',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
@@ -101,7 +101,7 @@ class ProductGridItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.6),
+        color: Colors.black.withAlpha(153),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(

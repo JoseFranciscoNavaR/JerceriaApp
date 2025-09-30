@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/category_model.dart';
-import '../../services/database_service.dart';
 
 class AdminEditCategoryScreen extends StatefulWidget {
   final Category? category;
@@ -9,14 +8,11 @@ class AdminEditCategoryScreen extends StatefulWidget {
   const AdminEditCategoryScreen({super.key, this.category});
 
   @override
-  _AdminEditCategoryScreenState createState() => _AdminEditCategoryScreenState();
+  AdminEditCategoryScreenState createState() => AdminEditCategoryScreenState();
 }
 
-class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
+class AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _databaseService = DatabaseService();
-  static const _uuid = Uuid();
-
   final _nameController = TextEditingController();
   bool _isAvailable = true;
   var _isLoading = false;
@@ -47,28 +43,38 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
       _isLoading = true;
     });
 
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
     try {
-      final newCategory = Category(
-        id: widget.category?.id ?? _uuid.v4(),
-        name: _nameController.text,
-        isAvailable: _isAvailable,
-      );
+      final categoryData = {
+        'name': _nameController.text,
+        'isAvailable': _isAvailable,
+      };
 
       if (widget.category == null) {
-        await _databaseService.addCategory(newCategory);
+        // Add new category
+        await FirebaseFirestore.instance.collection('categories').add(categoryData);
       } else {
-        await _databaseService.updateCategory(newCategory);
+        // Update existing category
+        await FirebaseFirestore.instance
+            .collection('categories')
+            .doc(widget.category!.id)
+            .update(categoryData);
       }
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Categoría guardada exitosamente'), backgroundColor: Colors.green),
+      navigator.pop();
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+            content: Text('Categoría guardada exitosamente'),
+            backgroundColor: Colors.green),
       );
     } catch (error) {
+      if (!mounted) return;
       await showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Ocurrió un error'),
-          content: const Text('No se pudo guardar la categoría. Intente de nuevo.'),
+          content: Text('No se pudo guardar la categoría. $error'),
           actions: <Widget>[
             TextButton(
               child: const Text('Okay'),
@@ -91,7 +97,9 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(widget.category == null ? 'Añadir Categoría' : 'Editar Categoría', style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+            widget.category == null ? 'Añadir Categoría' : 'Editar Categoría',
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -109,7 +117,11 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  _buildTextFormField(controller: _nameController, labelText: 'Nombre de la Categoría', validator: (v) => v!.isEmpty ? 'Este campo es obligatorio.' : null),
+                  _buildTextFormField(
+                      controller: _nameController,
+                      labelText: 'Nombre de la Categoría',
+                      validator: (v) =>
+                          v!.isEmpty ? 'Este campo es obligatorio.' : null),
                   const SizedBox(height: 20),
                   SwitchListTile(
                     title: const Text('Disponible para la venta'),
@@ -120,8 +132,8 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
                       });
                     },
                     activeThumbColor: Theme.of(context).colorScheme.primary,
-                    inactiveTrackColor: Colors.grey[300],
-                    inactiveThumbColor: Colors.grey[600],
+                    inactiveThumbColor: Colors.grey,
+                    inactiveTrackColor: Colors.grey.shade300,
                     contentPadding: EdgeInsets.zero,
                   ),
                   const SizedBox(height: 30),
@@ -129,12 +141,22 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: _isLoading ? null : _saveForm,
-                      icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white)) : const Icon(Icons.save_alt_outlined),
-                      label: Text(_isLoading ? 'Guardando...' : 'Guardar Categoría', style: const TextStyle(fontSize: 18, color: Colors.white)),
+                      icon: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 3, color: Colors.white))
+                          : const Icon(Icons.save_alt_outlined),
+                      label: Text(
+                          _isLoading ? 'Guardando...' : 'Guardar Categoría',
+                          style: const TextStyle(
+                              fontSize: 18, color: Colors.white)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30)),
                       ),
                     ),
                   ),
@@ -147,7 +169,12 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
     );
   }
 
-  Widget _buildTextFormField({required TextEditingController controller, required String labelText, int maxLines = 1, TextInputType keyboardType = TextInputType.text, required FormFieldValidator<String> validator}) {
+  Widget _buildTextFormField(
+      {required TextEditingController controller,
+      required String labelText,
+      int maxLines = 1,
+      TextInputType keyboardType = TextInputType.text,
+      required FormFieldValidator<String> validator}) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,

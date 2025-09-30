@@ -1,28 +1,18 @@
-import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import '../../models/product_model.dart';
-import '../../services/database_service.dart';
+import 'package:jarceria_app/models/product_model.dart';
 import './admin_edit_product_screen.dart';
 
 class AdminProductListScreen extends StatefulWidget {
   const AdminProductListScreen({super.key});
 
   @override
-  _AdminProductListScreenState createState() => _AdminProductListScreenState();
+  AdminProductListScreenState createState() => AdminProductListScreenState();
 }
 
-class _AdminProductListScreenState extends State<AdminProductListScreen> {
-  final DatabaseService _databaseService = DatabaseService();
+class AdminProductListScreenState extends State<AdminProductListScreen> {
   String _searchQuery = '';
   String _sortOrder = 'name_asc';
-  Timer? _debounce;
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    super.dispose();
-  }
 
   void _navigateToEditScreen(BuildContext context, {Product? product}) {
     Navigator.of(context).push(
@@ -30,29 +20,66 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
     );
   }
 
-  void _showDisableConfirmationDialog(BuildContext context, Product product) {
+  Future<void> _updateProductAvailability(Product product, bool isAvailable) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('products')
+          .doc(product.id)
+          .update({'isAvailable': isAvailable});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isAvailable ? 'Producto Habilitado' : 'Producto Deshabilitado'),
+          backgroundColor: isAvailable ? Colors.green : Colors.orangeAccent,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al actualizar: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context, Product product) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Deshabilitación'),
-        content: const Text('¿Estás seguro de que quieres deshabilitar este producto?'),
+        title: const Text('Confirmar Eliminación'),
+        content: const Text(
+            '¿Estás seguro de que quieres eliminar este producto? Esta acción es permanente y no se puede deshacer.'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: <Widget>[
           TextButton(
-            child: const Text('No'),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-            },
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.of(ctx).pop(),
           ),
           TextButton(
-            child: Text('Sí, Deshabilitar', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            onPressed: () {
-              product.isAvailable = false;
-              _databaseService.updateProduct(product);
-              Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Producto deshabilitado exitosamente'), backgroundColor: Colors.orange),
-              );
+            child: Text('Sí, Eliminar',
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            onPressed: () async {
+              try {
+                await FirebaseFirestore.instance
+                    .collection('products')
+                    .doc(product.id)
+                    .delete();
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Producto eliminado permanentemente.'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              } catch (e) {
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error al eliminar: $e'),
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                );
+              }
             },
           ),
         ],
@@ -65,7 +92,8 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Administrar Productos', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Administrar Productos',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -90,11 +118,8 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                       ),
                     ),
                     onChanged: (value) {
-                      if (_debounce?.isActive ?? false) _debounce!.cancel();
-                      _debounce = Timer(const Duration(milliseconds: 500), () {
-                        setState(() {
-                          _searchQuery = value;
-                        });
+                      setState(() {
+                        _searchQuery = value;
                       });
                     },
                   ),
@@ -127,20 +152,38 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                   ],
                 ),
                 IconButton(
-                  icon: Icon(Icons.add_circle_outline, color: Theme.of(context).colorScheme.primary),
+                  icon: Icon(Icons.add_circle_outline,
+                      color: Theme.of(context).colorScheme.primary),
                   onPressed: () => _navigateToEditScreen(context),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: ValueListenableBuilder(
-              valueListenable: Hive.box<Product>('products').listenable(),
-              builder: (context, Box<Product> box, _) {
-                var products = box.values.toList().cast<Product>();
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('products').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Error al cargar los datos'));
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                      child: Text('No hay productos. ¡Añade uno!'));
+                }
+
+                var products = snapshot.data!.docs
+                    .map((doc) => Product.fromFirestore(doc))
+                    .toList();
 
                 if (_searchQuery.isNotEmpty) {
-                  products = products.where((product) => product.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+                  products = products
+                      .where((product) => product.name
+                          .toLowerCase()
+                          .contains(_searchQuery.toLowerCase()))
+                      .toList();
                 }
 
                 products.sort((a, b) {
@@ -165,15 +208,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                       children: [
                         Icon(Icons.search_off, size: 100, color: Colors.grey[300]),
                         const SizedBox(height: 20),
-                        Text(
-                          'No se encontraron productos',
-                          style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
-                        ),
-                        if (_searchQuery.isNotEmpty)
-                          Text(
-                            'Intenta con otra búsqueda',
-                            style: TextStyle(fontSize: 16, color: Colors.grey[500]),
-                          ),
+                        Text('No se encontraron productos', style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300)),
                       ],
                     ),
                   );
@@ -186,10 +221,13 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                     final product = products[index];
                     return Card(
                       elevation: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 8.0, horizontal: 8.0),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 8.0),
                         leading: CircleAvatar(
                           radius: 30,
                           backgroundImage: product.imageUrl.isNotEmpty
@@ -197,37 +235,45 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
                               : null,
                           onBackgroundImageError: (_, __) {},
                           backgroundColor: Colors.grey[200],
-                          child: product.imageUrl.isEmpty ? const Icon(Icons.store, size: 30) : null,
+                          child: product.imageUrl.isEmpty
+                              ? const Icon(Icons.store, size: 30)
+                              : null,
                         ),
                         title: Text(
                           product.name,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            decoration: !product.isAvailable ? TextDecoration.lineThrough : null,
+                            decoration: !product.isAvailable
+                                ? TextDecoration.lineThrough
+                                : null,
                             color: !product.isAvailable ? Colors.grey : null,
                           ),
                         ),
-                        subtitle: Text('\$${product.price.toStringAsFixed(2)} / ${product.unit}'),
+                        subtitle: Text(
+                            '\$${product.price.toStringAsFixed(2)} / ${product.unit}'),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Switch(
                               value: product.isAvailable,
                               onChanged: (value) {
-                                product.isAvailable = value;
-                                _databaseService.updateProduct(product);
+                                _updateProductAvailability(product, value);
                               },
                               activeThumbColor: Theme.of(context).colorScheme.primary,
-                              inactiveTrackColor: Colors.grey[300],
-                              inactiveThumbColor: Colors.grey[600],
+                              inactiveThumbColor: Colors.grey,
+                              inactiveTrackColor: Colors.grey.shade300,
                             ),
                             IconButton(
-                              icon: Icon(Icons.edit_outlined, color: Colors.grey[600]),
-                              onPressed: () => _navigateToEditScreen(context, product: product),
+                              icon: Icon(Icons.edit_outlined,
+                                  color: Colors.grey[600]),
+                              onPressed: () =>
+                                  _navigateToEditScreen(context, product: product),
                             ),
                             IconButton(
-                              icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                              onPressed: () => _showDisableConfirmationDialog(context, product),
+                              icon: Icon(Icons.delete_outline,
+                                  color: Theme.of(context).colorScheme.error),
+                              onPressed: () =>
+                                  _showDeleteConfirmationDialog(context, product),
                             ),
                           ],
                         ),

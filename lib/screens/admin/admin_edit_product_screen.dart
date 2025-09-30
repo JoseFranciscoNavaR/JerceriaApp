@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:jarceria_app/models/category_model.dart';
 import '../../models/product_model.dart';
-import '../../models/category_model.dart';
-import '../../services/database_service.dart';
 
 class AdminEditProductScreen extends StatefulWidget {
   final Product? product;
@@ -10,22 +12,19 @@ class AdminEditProductScreen extends StatefulWidget {
   const AdminEditProductScreen({super.key, this.product});
 
   @override
-  _AdminEditProductScreenState createState() => _AdminEditProductScreenState();
+  AdminEditProductScreenState createState() => AdminEditProductScreenState();
 }
 
-class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
+class AdminEditProductScreenState extends State<AdminEditProductScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _databaseService = DatabaseService();
-  static const _uuid = Uuid();
-
   final _nameController = TextEditingController();
   final _brandController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _imageUrlController = TextEditingController();
+  File? _imageFile;
 
   String? _selectedCategoryId;
-  List<Category> _categories = [];
   bool _isSoldByVolume = false;
   bool _isAvailable = true;
   var _isLoading = false;
@@ -33,27 +32,18 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCategories();
     if (widget.product != null) {
       _nameController.text = widget.product!.name;
       _brandController.text = widget.product!.brand ?? '';
       _selectedCategoryId = widget.product!.categoryId;
-      _descriptionController.text = widget.product!.description;
+      _descriptionController.text = widget.product!.description ?? '';
       _priceController.text = widget.product!.price.toString();
       _imageUrlController.text = widget.product!.imageUrl;
       _isSoldByVolume = widget.product!.unit == 'Lt';
       _isAvailable = widget.product!.isAvailable;
     }
-    _imageUrlController.addListener(_updateImagePreview);
-  }
-
-  Future<void> _loadCategories() async {
-    final categories = _databaseService.getCategories();
-    setState(() {
-      _categories = categories;
-      if (widget.product == null && _categories.isNotEmpty) {
-        _selectedCategoryId = _categories.first.id;
-      }
+     _imageUrlController.addListener(() {
+      setState(() {});
     });
   }
 
@@ -63,18 +53,42 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
     _brandController.dispose();
     _descriptionController.dispose();
     _priceController.dispose();
-    _imageUrlController.removeListener(_updateImagePreview);
     _imageUrlController.dispose();
     super.dispose();
   }
 
-  void _updateImagePreview() {
-    setState(() {});
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+        _imageUrlController.clear();
+      });
+    }
+  }
+
+  Future<String?> _uploadImage(File imageFile) async {
+    try {
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('product_images')
+          .child('${DateTime.now().toIso8601String()}.jpg');
+      await storageRef.putFile(imageFile);
+      return await storageRef.getDownloadURL();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al subir la imagen: $e')),
+      );
+      return null;
+    }
   }
 
   Future<void> _saveForm() async {
     final isValid = _formKey.currentState?.validate() ?? false;
-    if (!isValid) {
+    if (!isValid || _selectedCategoryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, complete todos los campos requeridos.')),
+      );
       return;
     }
     _formKey.currentState?.save();
@@ -83,47 +97,43 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
       _isLoading = true;
     });
 
+    String? finalImageUrl = _imageUrlController.text;
+    if (_imageFile != null) {
+      finalImageUrl = await _uploadImage(_imageFile!);
+      if (finalImageUrl == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+    }
+
     try {
-      final newProduct = Product(
-        id: widget.product?.id ?? _uuid.v4(),
-        name: _nameController.text,
-        brand: _brandController.text.isNotEmpty ? _brandController.text : null,
-        categoryId: _selectedCategoryId!,
-        description: _descriptionController.text,
-        price: double.parse(_priceController.text),
-        imageUrl: _imageUrlController.text,
-        unit: _isSoldByVolume ? 'Lt' : 'Pz',
-        isAvailable: _isAvailable,
-      );
+      final productData = {
+        'name': _nameController.text,
+        'brand': _brandController.text.isNotEmpty ? _brandController.text : null,
+        'categoryId': _selectedCategoryId!,
+        'description': _descriptionController.text,
+        'price': double.parse(_priceController.text),
+        'imageUrl': finalImageUrl,
+        'unit': _isSoldByVolume ? 'Lt' : 'Pz',
+        'isAvailable': _isAvailable,
+      };
 
       if (widget.product == null) {
-        await _databaseService.addProduct(newProduct);
+        await FirebaseFirestore.instance.collection('products').add(productData);
       } else {
-        await _databaseService.updateProduct(newProduct);
+        await FirebaseFirestore.instance
+            .collection('products')
+            .doc(widget.product!.id)
+            .update(productData);
       }
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Producto guardado exitosamente'), backgroundColor: Colors.green),
-      );
     } catch (error) {
-      await showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Ocurrió un error'),
-          content: const Text('No se pudo guardar el producto. Intente de nuevo.'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Okay'),
-              onPressed: () => Navigator.of(ctx).pop(),
-            )
-          ],
-        ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo guardar el producto: $error')),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      if(mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -133,7 +143,8 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(widget.product == null ? 'Añadir Producto' : 'Editar Producto', style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(widget.product == null ? 'Añadir Producto' : 'Editar Producto',
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -152,32 +163,58 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   _buildImagePreview(),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: _pickImage,
+                    icon: const Icon(Icons.image_search),
+                    label: const Text('Seleccionar Imagen'),
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ),
+                  ),
                   const SizedBox(height: 20),
-                  _buildTextFormField(controller: _nameController, labelText: 'Nombre del Producto', validator: (v) => v!.isEmpty ? 'Este campo es obligatorio.' : null),
+                  _buildTextFormField(
+                      controller: _nameController,
+                      labelText: 'Nombre del Producto',
+                      validator: (v) => v!.isEmpty ? 'Requerido' : null),
                   const SizedBox(height: 20),
-                  _buildTextFormField(controller: _brandController, labelText: 'Marca (Opcional)', validator: (v) => null),
+                  _buildTextFormField(
+                      controller: _brandController, labelText: 'Marca (Opcional)'),
                   const SizedBox(height: 20),
                   _buildCategoryDropdown(),
                   const SizedBox(height: 20),
-                  _buildTextFormField(controller: _descriptionController, labelText: 'Descripción', maxLines: 3, validator: (v) => v!.isEmpty ? 'Este campo es obligatorio.' : null),
+                   _buildTextFormField(
+                    controller: _imageUrlController,
+                    labelText: 'URL de la Imagen (Opcional)',
+                    onChanged: (value) {
+                      setState(() {
+                        _imageFile = null;
+                      });
+                    },
+                  ),
                   const SizedBox(height: 20),
-                  _buildTextFormField(controller: _priceController, labelText: 'Precio', keyboardType: const TextInputType.numberWithOptions(decimal: true), validator: (v) {
-                    if (v == null || v.isEmpty) return 'Requerido';
-                    if (double.tryParse(v) == null) return 'Número inválido';
-                    if (double.parse(v) <= 0) return '> 0';
-                    return null;
-                  }),
+                  _buildTextFormField(
+                      controller: _descriptionController,
+                      labelText: 'Descripción (Opcional)',
+                      maxLines: 3),
                   const SizedBox(height: 20),
-                  _buildTextFormField(controller: _imageUrlController, labelText: 'URL de la Imagen', keyboardType: TextInputType.url, validator: (v) {
-                    if (v == null || v.isEmpty) return 'Este campo es obligatorio.';
-                    final uri = Uri.tryParse(v);
-                    if (uri == null || !uri.isAbsolute) return 'Por favor, introduce una URL válida.';
-                    return null;
-                  }),
+                  _buildTextFormField(
+                      controller: _priceController,
+                      labelText: 'Precio',
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Requerido';
+                        if (double.tryParse(v) == null) return 'Número inválido';
+                        if (double.parse(v) <= 0) return '> 0';
+                        return null;
+                      }),
                   const SizedBox(height: 20),
                   SwitchListTile(
                     title: const Text('Vendido por volumen'),
-                    subtitle: Text(_isSoldByVolume ? 'La unidad se establecerá en Litros (Lt)' : 'La unidad se establecerá en Piezas (Pz)'),
+                    subtitle: Text(_isSoldByVolume
+                        ? 'La unidad se establecerá en Litros (Lt)'
+                        : 'La unidad se establecerá en Piezas (Pz)'),
                     value: _isSoldByVolume,
                     onChanged: (bool value) {
                       setState(() {
@@ -185,8 +222,8 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                       });
                     },
                     activeThumbColor: Theme.of(context).colorScheme.primary,
-                    inactiveTrackColor: Colors.grey[300],
-                    inactiveThumbColor: Colors.grey[600],
+                    inactiveThumbColor: Colors.grey,
+                    inactiveTrackColor: Colors.grey.shade300,
                     contentPadding: EdgeInsets.zero,
                   ),
                   SwitchListTile(
@@ -198,8 +235,8 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                       });
                     },
                     activeThumbColor: Theme.of(context).colorScheme.primary,
-                    inactiveTrackColor: Colors.grey[300],
-                    inactiveThumbColor: Colors.grey[600],
+                    inactiveThumbColor: Colors.grey,
+                    inactiveTrackColor: Colors.grey.shade300,
                     contentPadding: EdgeInsets.zero,
                   ),
                   const SizedBox(height: 30),
@@ -207,12 +244,22 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: _isLoading ? null : _saveForm,
-                      icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white)) : const Icon(Icons.save_alt_outlined),
-                      label: Text(_isLoading ? 'Guardando...' : 'Guardar Producto', style: const TextStyle(fontSize: 18, color: Colors.white)),
+                      icon: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 3, color: Colors.white))
+                          : const Icon(Icons.save_alt_outlined),
+                      label: Text(
+                          _isLoading ? 'Guardando...' : 'Guardar Producto',
+                          style: const TextStyle(
+                              fontSize: 18, color: Colors.white)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30)),
                       ),
                     ),
                   ),
@@ -226,61 +273,72 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
   }
 
   Widget _buildCategoryDropdown() {
-    return DropdownButtonFormField<String>(
-      initialValue: _selectedCategoryId,
-      decoration: InputDecoration(
-        labelText: 'Categoría',
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-      ),
-      items: _categories.map((Category category) {
-        return DropdownMenuItem<String>(
-          value: category.id,
-          child: Text(category.name),
-        );
-      }).toList(),
-      onChanged: (newValue) {
-        setState(() {
-          _selectedCategoryId = newValue;
-        });
-      },
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Por favor, seleccione una categoría.';
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('categories').where('isAvailable', isEqualTo: true).snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const CircularProgressIndicator();
         }
-        return null;
+        var categories = snapshot.data!.docs.map((doc) => Category.fromFirestore(doc)).toList();
+
+        if (_selectedCategoryId == null && categories.isNotEmpty) {
+            _selectedCategoryId = categories.first.id;
+        }
+
+        return DropdownButtonFormField<String>(
+          initialValue: _selectedCategoryId,
+          decoration: InputDecoration(
+            labelText: 'Categoría',
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+          ),
+          items: categories.map((Category category) {
+            return DropdownMenuItem<String>(
+              value: category.id,
+              child: Text(category.name),
+            );
+          }).toList(),
+          onChanged: (newValue) {
+            setState(() {
+              _selectedCategoryId = newValue;
+            });
+          },
+          validator: (value) => value == null ? 'Requerido' : null,
+        );
       },
     );
   }
 
-  Widget _buildTextFormField({required TextEditingController controller, required String labelText, int maxLines = 1, TextInputType keyboardType = TextInputType.text, required FormFieldValidator<String> validator}) {
+    Widget _buildTextFormField({
+    required TextEditingController controller,
+    required String labelText,
+    int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
+    FormFieldValidator<String>? validator,
+    Function(String)? onChanged,
+  }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
       validator: validator,
+      onChanged: onChanged,
       decoration: InputDecoration(
         labelText: labelText,
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide(color: Colors.grey[300]!),
         ),
       ),
     );
   }
 
   Widget _buildImagePreview() {
-    final imageUrl = _imageUrlController.text;
+  final imageUrl = _imageUrlController.text;
     return Container(
       height: 150,
       width: double.infinity,
@@ -289,26 +347,37 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
         borderRadius: BorderRadius.circular(12),
         color: Colors.grey[100],
       ),
-      child: imageUrl.isNotEmpty && Uri.tryParse(imageUrl)?.hasAbsolutePath == true
+      child: _imageFile != null
           ? ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator()),
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.error_outline, color: Colors.red, size: 50),
-              ),
+              child: Image.file(_imageFile!, fit: BoxFit.cover),
             )
-          : Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.image_outlined, size: 50, color: Colors.grey[400]),
-                  const SizedBox(height: 8),
-                  Text('Vista previa de la imagen', style: TextStyle(color: Colors.grey[600])),
-                ],
-              ),
-            ),
+          : (imageUrl.isNotEmpty)
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, progress) =>
+                        progress == null
+                            ? child
+                            : const Center(child: CircularProgressIndicator()),
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                  ),
+                )
+              : Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.image_outlined, size: 50, color: Colors.grey[400]),
+                      const SizedBox(height: 8),
+                      Text('Vista previa de la imagen',
+                          style: TextStyle(color: Colors.grey[600])),
+                    ],
+                  ),
+                ),
     );
   }
+
 }

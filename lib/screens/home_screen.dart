@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../models/category_model.dart';
 import '../models/product_model.dart';
+import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../screens/admin/admin_login_screen.dart';
@@ -11,18 +12,53 @@ import '../widgets/product_grid_item.dart';
 import './cart_screen.dart';
 import './order_history_screen.dart';
 import 'package:badges/badges.dart' as badges;
+import '../generated/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  HomeScreenState createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
+  Future<void> _logout(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        final l10n = AppLocalizations.of(context)!;
+        return AlertDialog(
+          title: Text(l10n.logout),
+          content: Text(l10n.logoutConfirmation),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.logout),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      await authProvider.signOut();
+      if (!mounted) return;
+      if (context.mounted) {
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (ctx) => const HomeScreen()));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final navigationProvider = Provider.of<NavigationProvider>(context);
+    final l10n = AppLocalizations.of(context)!;
 
     final List<Widget> widgetOptions = <Widget>[
       const ProductsGrid(),
@@ -31,14 +67,15 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     final List<String> widgetTitles = <String>[
-      'Jarcería Productos',
-      'Mi Carrito',
-      'Historial de Órdenes',
+      l10n.products,
+      l10n.myCart,
+      l10n.orderHistory,
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widgetTitles[navigationProvider.selectedIndex], style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(widgetTitles[navigationProvider.selectedIndex],
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -47,7 +84,8 @@ class _HomeScreenState extends State<HomeScreen> {
           if (navigationProvider.selectedIndex != 1)
             Consumer<CartProvider>(
               builder: (_, cart, ch) => badges.Badge(
-                badgeContent: Text(cart.totalQuantity.round().toString(), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                badgeContent: Text(cart.totalQuantity.round().toString(),
+                    style: const TextStyle(color: Colors.white, fontSize: 12)),
                 showBadge: cart.totalQuantity > 0,
                 position: badges.BadgePosition.topEnd(top: 0, end: 0),
                 child: IconButton(
@@ -58,10 +96,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-          IconButton(
-            icon: const Icon(Icons.admin_panel_settings_outlined),
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const AdminLoginScreen()));
+          Consumer<AuthProvider>(
+            builder: (context, auth, child) {
+              if (auth.isAuthenticated) {
+                return IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () => _logout(context),
+                  tooltip: AppLocalizations.of(context)!.logout,
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+          Consumer<AuthProvider>(
+            builder: (context, auth, child) {
+              if (auth.isAuthenticated) {
+                return IconButton(
+                  icon: const Icon(Icons.admin_panel_settings_outlined),
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (ctx) => const AdminLoginScreen()));
+                  },
+                );
+              }
+              return const SizedBox.shrink();
             },
           ),
         ],
@@ -73,15 +131,16 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.grey[50],
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.store_outlined),
-            activeIcon: Icon(Icons.store),
-            label: 'Productos',
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.store_outlined),
+            activeIcon: const Icon(Icons.store),
+            label: l10n.products,
           ),
           BottomNavigationBarItem(
             icon: Consumer<CartProvider>(
               builder: (_, cart, ch) => badges.Badge(
-                badgeContent: Text(cart.totalQuantity.round().toString(), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                badgeContent: Text(cart.totalQuantity.round().toString(),
+                    style: const TextStyle(color: Colors.white, fontSize: 12)),
                 showBadge: cart.totalQuantity > 0,
                 position: badges.BadgePosition.topEnd(top: -8, end: -8),
                 child: ch!,
@@ -89,12 +148,12 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Icon(Icons.shopping_cart_outlined),
             ),
             activeIcon: const Icon(Icons.shopping_cart),
-            label: 'Carrito',
+            label: l10n.myCart,
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'Historial',
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.history_outlined),
+            activeIcon: const Icon(Icons.history),
+            label: l10n.orderHistory,
           ),
         ],
         currentIndex: navigationProvider.selectedIndex,
@@ -111,10 +170,10 @@ class ProductsGrid extends StatefulWidget {
   const ProductsGrid({super.key});
 
   @override
-  _ProductsGridState createState() => _ProductsGridState();
+  ProductsGridState createState() => ProductsGridState();
 }
 
-class _ProductsGridState extends State<ProductsGrid> {
+class ProductsGridState extends State<ProductsGrid> {
   String _searchQuery = '';
   String _sortOrder = 'A-Z';
   int _crossAxisCount = 2;
@@ -129,6 +188,8 @@ class _ProductsGridState extends State<ProductsGrid> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       children: [
         Padding(
@@ -138,7 +199,7 @@ class _ProductsGridState extends State<ProductsGrid> {
               Expanded(
                 child: TextField(
                   decoration: InputDecoration(
-                    hintText: 'Buscar productos...',
+                    hintText: l10n.searchProducts,
                     prefixIcon: const Icon(Icons.search, color: Colors.grey),
                     filled: true,
                     fillColor: Colors.white,
@@ -166,32 +227,32 @@ class _ProductsGridState extends State<ProductsGrid> {
                 },
                 icon: Icon(Icons.sort, color: Colors.grey[600]),
                 itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'A-Z',
                     child: ListTile(
-                      leading: Icon(Icons.sort_by_alpha),
-                      title: Text('A-Z'),
+                      leading: const Icon(Icons.sort_by_alpha),
+                      title: Text(l10n.sortAZ),
                     ),
                   ),
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'Z-A',
                     child: ListTile(
-                      leading: Icon(Icons.sort_by_alpha),
-                      title: Text('Z-A'),
+                      leading: const Icon(Icons.sort_by_alpha),
+                      title: Text(l10n.sortZA),
                     ),
                   ),
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'Precio Menor',
                     child: ListTile(
-                      leading: Icon(Icons.arrow_downward),
-                      title: Text('Precio Menor'),
+                      leading: const Icon(Icons.arrow_downward),
+                      title: Text(l10n.priceAsc),
                     ),
                   ),
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'Precio Mayor',
                     child: ListTile(
-                      leading: Icon(Icons.arrow_upward),
-                      title: Text('Precio Mayor'),
+                      leading: const Icon(Icons.arrow_upward),
+                      title: Text(l10n.priceDesc),
                     ),
                   ),
                 ],
@@ -204,25 +265,25 @@ class _ProductsGridState extends State<ProductsGrid> {
                 },
                 icon: Icon(Icons.view_column_outlined, color: Colors.grey[600]),
                 itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
-                  const PopupMenuItem<int>(
+                  PopupMenuItem<int>(
                     value: 2,
                     child: ListTile(
-                      leading: Icon(Icons.view_module),
-                      title: Text('2 por fila'),
+                      leading: const Icon(Icons.view_module),
+                      title: Text(l10n.twoPerRow),
                     ),
                   ),
-                  const PopupMenuItem<int>(
+                  PopupMenuItem<int>(
                     value: 3,
                     child: ListTile(
-                      leading: Icon(Icons.view_comfy),
-                      title: Text('3 por fila'),
+                      leading: const Icon(Icons.view_comfy),
+                      title: Text(l10n.threePerRow),
                     ),
                   ),
-                  const PopupMenuItem<int>(
+                  PopupMenuItem<int>(
                     value: 4,
                     child: ListTile(
-                      leading: Icon(Icons.view_agenda),
-                      title: Text('4 por fila'),
+                      leading: const Icon(Icons.view_agenda),
+                      title: Text(l10n.fourPerRow),
                     ),
                   ),
                 ],
@@ -232,17 +293,32 @@ class _ProductsGridState extends State<ProductsGrid> {
         ),
         SizedBox(
           height: 50,
-          child: ValueListenableBuilder(
-            valueListenable: Hive.box<Category>('categories').listenable(),
-            builder: (context, Box<Category> box, _) {
-              final categories = [Category(id: 'all', name: 'Todos'), ...box.values.where((c) => c.isAvailable)];
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('categories').snapshots(),
+            builder: (context, snapshot) {
+
+              if (snapshot.hasError) {
+                return Center(child: Text(l10n.somethingWentWrong));
+              }
+
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final categoryDocs = snapshot.data!.docs;
+              final categories = [
+                Category(id: 'all', name: l10n.all),
+                ...categoryDocs.map((doc) => Category.fromFirestore(doc)).where((c) => c.isAvailable)
+              ];
+
               return ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 itemCount: categories.length,
                 itemBuilder: (context, index) {
                   final category = categories[index];
-                  final isSelected = _selectedCategoryId == category.id || (_selectedCategoryId == null && category.id == 'all');
+                  final isSelected = _selectedCategoryId == category.id ||
+                      (_selectedCategoryId == null && category.id == 'all');
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4.0),
                     child: ChoiceChip(
@@ -251,7 +327,8 @@ class _ProductsGridState extends State<ProductsGrid> {
                       onSelected: (selected) {
                         setState(() {
                           if (selected) {
-                            _selectedCategoryId = category.id == 'all' ? null : category.id;
+                            _selectedCategoryId =
+                                category.id == 'all' ? null : category.id;
                           }
                         });
                       },
@@ -262,7 +339,9 @@ class _ProductsGridState extends State<ProductsGrid> {
                       backgroundColor: Colors.white,
                       shape: StadiumBorder(
                         side: BorderSide(
-                          color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey[300]!,
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.grey[300]!,
                         ),
                       ),
                     ),
@@ -273,18 +352,31 @@ class _ProductsGridState extends State<ProductsGrid> {
           ),
         ),
         Expanded(
-          child: ValueListenableBuilder(
-            valueListenable: Hive.box<Product>('products').listenable(),
-            builder: (context, Box<Product> box, _) {
-              var products = box.values.where((p) => p.isAvailable).toList();
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('products').snapshots(),
+            builder: (context, snapshot) {
+
+              if (snapshot.hasError) {
+                return Center(child: Text(l10n.somethingWentWrong));
+              }
+
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              var products = snapshot.data!.docs.map((doc) => Product.fromFirestore(doc)).where((p) => p.isAvailable).toList();
 
               if (_selectedCategoryId != null) {
-                products = products.where((p) => p.categoryId == _selectedCategoryId).toList();
+                products = products
+                    .where((p) => p.categoryId == _selectedCategoryId)
+                    .toList();
               }
 
               if (_searchQuery.isNotEmpty) {
                 products = products
-                    .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+                    .where((p) => p.name
+                        .toLowerCase()
+                        .contains(_searchQuery.toLowerCase()))
                     .toList();
               }
 
@@ -308,16 +400,21 @@ class _ProductsGridState extends State<ProductsGrid> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.search_off, size: 100, color: Colors.grey[300]),
+                      Icon(Icons.search_off,
+                          size: 100, color: Colors.grey[300]),
                       const SizedBox(height: 20),
                       Text(
-                        'No se encontraron productos',
-                        style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
+                        l10n.noProductsFound,
+                        style: TextStyle(
+                            fontSize: 22,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w300),
                       ),
                       if (_searchQuery.isNotEmpty)
                         Text(
-                          'Intenta con otra búsqueda',
-                          style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+                          l10n.tryAnotherSearch,
+                          style:
+                              TextStyle(fontSize: 16, color: Colors.grey[500]),
                         ),
                     ],
                   ),
@@ -337,7 +434,8 @@ class _ProductsGridState extends State<ProductsGrid> {
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                   ),
-                  itemBuilder: (ctx, i) => ProductGridItem(product: products[i]),
+                  itemBuilder: (ctx, i) =>
+                      ProductGridItem(product: products[i]),
                 ),
               );
             },

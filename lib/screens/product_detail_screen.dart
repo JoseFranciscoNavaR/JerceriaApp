@@ -16,10 +16,10 @@ class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({super.key, required this.product});
 
   @override
-  _ProductDetailScreenState createState() => _ProductDetailScreenState();
+  ProductDetailScreenState createState() => ProductDetailScreenState();
 }
 
-class _ProductDetailScreenState extends State<ProductDetailScreen> {
+class ProductDetailScreenState extends State<ProductDetailScreen> {
   late TextEditingController _litersController;
   late TextEditingController _pesosController;
   late TextEditingController _discreteController;
@@ -112,7 +112,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withAlpha(51),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -316,7 +316,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     VoidCallback? onPressed,
   }) {
     return CircleAvatar(
-      backgroundColor: Colors.black.withOpacity(0.5),
+      backgroundColor: Colors.black.withAlpha(128),
       child: child ?? IconButton(
         icon: Icon(icon, color: Colors.white),
         onPressed: onPressed,
@@ -373,18 +373,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        Text(
-          'Descripción',
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          widget.product.description,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: Colors.black54,
-            height: 1.6,
+        if (widget.product.description != null && widget.product.description!.isNotEmpty) ...[
+          Text(
+            'Descripción',
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
-        ),
+          const SizedBox(height: 8),
+          Text(
+            widget.product.description!,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: Colors.black54,
+              height: 1.6,
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
         if (widget.product.brand != null && widget.product.brand!.isNotEmpty) ...[
           Text(
@@ -459,11 +461,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       textAlign: TextAlign.center,
       style: theme.textTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.bold,
-        color: enabled ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withOpacity(0.6),
+        color: enabled ? theme.colorScheme.onSurface : theme.colorScheme.onSurface.withAlpha(153),
       ),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: enabled ? theme.primaryColor : theme.colorScheme.onSurface.withOpacity(0.4)),
+        labelStyle: TextStyle(color: enabled ? theme.primaryColor : theme.colorScheme.onSurface.withAlpha(102)),
         prefixText: prefix,
         filled: !enabled,
         fillColor: Colors.grey.shade100,
@@ -513,7 +515,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(13),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
