@@ -85,6 +85,8 @@ class CartScreen extends StatelessWidget {
 
   Widget _buildSummaryCard(BuildContext context, CartProvider cart) {
     final theme = Theme.of(context);
+    final user = FirebaseAuth.instance.currentUser;
+    final customerName = user?.displayName ?? user?.email ?? 'Cliente Anónimo';
     return Card(
       margin: const EdgeInsets.fromLTRB(15, 15, 15, 10),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -128,6 +130,7 @@ class CartScreen extends StatelessWidget {
                         Provider.of<OrderProvider>(context, listen: false).addOrder(
                           cart.items.values.toList(),
                           cart.totalAmount,
+                          customerName,
                         );
                         cart.clear();
                         ScaffoldMessenger.of(context).showSnackBar(

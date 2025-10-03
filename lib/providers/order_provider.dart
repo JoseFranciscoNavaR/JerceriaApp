@@ -7,21 +7,22 @@ class OrderProvider with ChangeNotifier {
 
   List<Order> get orders => [..._orders];
 
-  void addOrder(List<CartItem> cartProducts, double total) {
+  void addOrder(List<CartItem> cartProducts, double total, String customerName) {
     final newOrder = Order(
       id: DateTime.now().toString(),
       products: cartProducts,
       totalAmount: total,
       date: DateTime.now(),
+      customerName: customerName,
     );
     _orders.insert(0, newOrder);
     notifyListeners();
   }
 
-  void markOrderAsRead(String orderId) {
+  void updateOrderStatus(String orderId, String newStatus) {
     final orderIndex = _orders.indexWhere((order) => order.id == orderId);
     if (orderIndex != -1) {
-      _orders[orderIndex].isNew = false;
+      _orders[orderIndex].status = newStatus;
       notifyListeners();
     }
   }

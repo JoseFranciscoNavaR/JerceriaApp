@@ -5,13 +5,15 @@ class Order {
   final List<CartItem> products;
   final double totalAmount;
   final DateTime date;
-  bool isNew;
+  final String customerName;
+  String status;
 
   Order({
     required this.id,
     required this.products,
     required this.totalAmount,
     required this.date,
-    this.isNew = true,
+    required this.customerName,
+    this.status = 'Pendiente',
   });
 }
