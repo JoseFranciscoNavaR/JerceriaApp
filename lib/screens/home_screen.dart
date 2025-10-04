@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../models/category_model.dart';
 import '../models/product_model.dart';
-import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../screens/admin/admin_login_screen.dart';
@@ -22,39 +21,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> {
-  Future<void> _logout(BuildContext context) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        final l10n = AppLocalizations.of(context)!;
-        return AlertDialog(
-          title: Text(l10n.logout),
-          content: Text(l10n.logoutConfirmation),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(l10n.cancel),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(l10n.logout),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed == true) {
-      await authProvider.signOut();
-      if (!mounted) return;
-      if (context.mounted) {
-        Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (ctx) => const HomeScreen()));
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final navigationProvider = Provider.of<NavigationProvider>(context);
@@ -96,30 +62,11 @@ class HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-          Consumer<AuthProvider>(
-            builder: (context, auth, child) {
-              if (auth.isAuthenticated) {
-                return IconButton(
-                  icon: const Icon(Icons.logout),
-                  onPressed: () => _logout(context),
-                  tooltip: AppLocalizations.of(context)!.logout,
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-          Consumer<AuthProvider>(
-            builder: (context, auth, child) {
-              if (auth.isAuthenticated) {
-                return IconButton(
-                  icon: const Icon(Icons.admin_panel_settings_outlined),
-                  onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (ctx) => const AdminLoginScreen()));
-                  },
-                );
-              }
-              return const SizedBox.shrink();
+          IconButton(
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (ctx) => const AdminLoginScreen()));
             },
           ),
         ],

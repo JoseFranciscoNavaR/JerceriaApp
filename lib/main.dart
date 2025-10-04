@@ -7,7 +7,6 @@ import 'providers/cart_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/auth_provider.dart' as app_auth_provider;
-import 'screens/user_login_screen.dart';
 import 'generated/app_localizations.dart';
 
 void main() async {
@@ -105,7 +104,7 @@ class AuthWrapperState extends State<AuthWrapper> {
             auth.resetInactivityTimer();
           },
           behavior: HitTestBehavior.translucent,
-          child: auth.isAuthenticated ? const HomeScreen() : const UserLoginScreen(),
+          child: const HomeScreen(),
         );
       },
     );
