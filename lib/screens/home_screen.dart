@@ -279,13 +279,13 @@ class ProductsGridState extends State<ProductsGrid> {
                       title: Text(l10n.threePerRow),
                     ),
                   ),
-                  PopupMenuItem<int>(
+                  /*PopupMenuItem<int>(
                     value: 4,
                     child: ListTile(
                       leading: const Icon(Icons.view_agenda),
                       title: Text(l10n.fourPerRow),
                     ),
-                  ),
+                  ),*/
                 ],
               ),
             ],

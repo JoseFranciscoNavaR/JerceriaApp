@@ -178,25 +178,29 @@ class AdminOrderListScreenState extends State<AdminOrderListScreen> {
   }
   
   Widget _buildStatusFilters() {
-    return Padding(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: ['Todos', 'Pendiente', 'Completada', 'Cancelada'].map((status) {
           final isSelected = _statusFilter == status;
-          return ChoiceChip(
-            label: Text(status),
-            selected: isSelected,
-            onSelected: (selected) {
-              if (selected) {
-                setState(() => _statusFilter = status);
-              }
-            },
-            backgroundColor: Colors.grey[200],
-            selectedColor: Theme.of(context).primaryColor.withOpacity(0.8),
-            labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
-            shape: StadiumBorder(side: BorderSide(color: isSelected ? Theme.of(context).primaryColor : Colors.grey[300]!)),
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: ChoiceChip(
+              label: Text(status),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() => _statusFilter = status);
+                }
+              },
+              backgroundColor: Colors.white,
+              selectedColor: Theme.of(context).colorScheme.primary,
+              labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
+              shape: StadiumBorder(side: BorderSide(color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey[300]!)),
 
+            ),
           );
         }).toList(),
       ),
