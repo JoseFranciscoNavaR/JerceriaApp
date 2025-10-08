@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:jarceria_app/screens/user_login_screen.dart';
 import 'package:provider/provider.dart';
 import '../models/category_model.dart';
 import '../models/product_model.dart';
 import '../providers/cart_provider.dart';
 import '../providers/navigation_provider.dart';
-import '../screens/admin/admin_login_screen.dart';
 import '../widgets/product_grid_item.dart';
 import './cart_screen.dart';
 import './order_history_screen.dart';
 import 'package:badges/badges.dart' as badges;
 import '../generated/app_localizations.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,6 +26,7 @@ class HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final navigationProvider = Provider.of<NavigationProvider>(context);
     final l10n = AppLocalizations.of(context)!;
+    final user = FirebaseAuth.instance.currentUser;
 
     final List<Widget> widgetOptions = <Widget>[
       const ProductsGrid(),
@@ -62,13 +64,26 @@ class HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-          IconButton(
-            icon: const Icon(Icons.admin_panel_settings_outlined),
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (ctx) => const AdminLoginScreen()));
-            },
-          ),
+          if (user != null)
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+                if (!mounted) return;
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  (Route<dynamic> route) => false,
+                );
+              },
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.person_outline),
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (ctx) => const UserLoginScreen()));
+              },
+            ),
         ],
       ),
       body: IndexedStack(
