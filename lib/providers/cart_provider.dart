@@ -1,126 +1,166 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:jarceria_app/models/product_model.dart';
 import 'package:jarceria_app/models/cart_item_model.dart';
 
 class CartProvider with ChangeNotifier {
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   Map<String, CartItem> _items = {};
+  StreamSubscription? _cartSubscription;
+  String? _userId;
+
+  CartProvider() {
+    _auth.authStateChanges().listen(_onAuthStateChanged);
+  }
+
+  void _onAuthStateChanged(User? user) {
+    _cartSubscription?.cancel();
+    if (user == null) {
+      _userId = null;
+      _items = {};
+      notifyListeners();
+    } else {
+      _userId = user.uid;
+      _cartSubscription = _db
+          .collection('carts')
+          .doc(_userId)
+          .collection('items')
+          .snapshots()
+          .listen((snapshot) {
+        _items = {
+          for (var doc in snapshot.docs) doc.id: CartItem.fromJson(doc.data())
+        };
+        notifyListeners();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _cartSubscription?.cancel();
+    super.dispose();
+  }
 
   Map<String, CartItem> get items => {..._items};
 
-  int get itemCount {
-    return _items.length;
-  }
+  int get itemCount => _items.length;
 
   double get totalQuantity {
-    double total = 0;
-    _items.forEach((key, cartItem) {
-      total += cartItem.quantity;
-    });
-    return total;
+    return _items.values.fold(0.0, (sum, item) => sum + item.quantity);
   }
 
   double get totalAmount {
-    var total = 0.0;
-    _items.forEach((key, cartItem) {
-      // For items sold by piece ('Pz'), always calculate price * quantity
-      if (cartItem.unit == 'Pz') {
-        total += cartItem.price * cartItem.quantity;
+    return _items.values.fold(0.0, (sum, item) {
+      if (item.unit == 'Pz') {
+        return sum + (item.price * item.quantity);
       } else {
-        // For volumetric items ('Lt'), use the pre-calculated totalPrice if available
-        total += cartItem.totalPrice ?? (cartItem.price * cartItem.quantity);
+        return sum + (item.totalPrice ?? (item.price * item.quantity));
       }
     });
-    return total;
   }
 
-  void addItem(Product product, double quantity, {double? totalPrice}) {
-    if (quantity <= 0) return;
+  Future<void> addItem(Product product, double quantity,
+      {double? totalPrice}) async {
+    if (_userId == null || quantity <= 0) return;
+
+    final cartItemRef =
+        _db.collection('carts').doc(_userId).collection('items').doc(product.id);
 
     if (_items.containsKey(product.id)) {
-      _items.update(
-        product.id,
-        (existingCartItem) {
-          final newQuantity = existingCartItem.quantity + quantity;
-          double? newTotalPrice;
+      final existingItem = _items[product.id]!;
+      final newQuantity = existingItem.quantity + quantity;
+      double? newTotalPrice;
 
-          // Only calculate and update totalPrice for volumetric items
-          if (existingCartItem.unit == 'Lt') {
-            newTotalPrice = (existingCartItem.totalPrice ?? (existingCartItem.price * existingCartItem.quantity)) +
-                            (totalPrice ?? (product.price * quantity));
-          }
-          
-          return existingCartItem.copyWith(
-            quantity: newQuantity,
-            // Keep totalPrice null for non-volumetric items
-            totalPrice: existingCartItem.unit == 'Lt' ? newTotalPrice : null,
-          );
-        },
-      );
-    } else {
-      _items.putIfAbsent(
-        product.id,
-        () => CartItem(
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          quantity: quantity,
-          imageUrl: product.imageUrl,
-          unit: product.unit,
-          // Only set totalPrice for volumetric items on initial add
-          totalPrice: product.unit == 'Lt' ? totalPrice : null,
-        ),
-      );
-    }
-    notifyListeners();
-  }
+      if (existingItem.unit == 'Lt') {
+        newTotalPrice =
+            (existingItem.totalPrice ?? (existingItem.price * existingItem.quantity)) +
+                (totalPrice ?? (product.price * quantity));
+      }
 
-  void removeSingleItem(String productId) {
-    if (!_items.containsKey(productId)) return;
-
-    final existingItem = _items[productId]!;
-    final isVolumetric = existingItem.unit == 'Lt';
-    final double decrementAmount = isVolumetric ? 0.1 : 1.0;
-    final double newQuantity = existingItem.quantity - decrementAmount;
-
-    if (newQuantity > 0.001) { // Use tolerance for float comparison
-      _items.update(productId, (item) {
-        return item.copyWith(
-          quantity: newQuantity,
-          // For non-volumetric items, the total is calculated in totalAmount getter
-          // For volumetric, let's recalculate based on new quantity for consistency
-          totalPrice: isVolumetric ? (item.price * newQuantity) : null,
-        );
+      await cartItemRef.update({
+        'quantity': newQuantity,
+        'totalPrice': newTotalPrice,
       });
     } else {
-      _items.remove(productId);
+      final newItem = CartItem(
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: quantity,
+        imageUrl: product.imageUrl,
+        unit: product.unit,
+        totalPrice: product.unit == 'Lt' ? totalPrice : null,
+      );
+      await cartItemRef.set(newItem.toJson());
     }
-    notifyListeners();
   }
 
-  void updateItemQuantity(String productId, double newQuantity) {
-    if (!_items.containsKey(productId)) return;
+  Future<void> removeSingleItem(String productId) async {
+    if (_userId == null || !_items.containsKey(productId)) return;
+
+    final cartItemRef =
+        _db.collection('carts').doc(_userId).collection('items').doc(productId);
+    final existingItem = _items[productId]!;
+
+    if (existingItem.unit != 'Lt' && existingItem.quantity <= 1) {
+      await cartItemRef.delete();
+    } else {
+      final isVolumetric = existingItem.unit == 'Lt';
+      final double decrementAmount = isVolumetric ? 0.1 : 1.0;
+      final double newQuantity = existingItem.quantity - decrementAmount;
+
+      if (newQuantity > 0.001) {
+        await cartItemRef.update({
+          'quantity': newQuantity,
+          'totalPrice': isVolumetric ? (existingItem.price * newQuantity) : null,
+        });
+      } else {
+        await cartItemRef.delete();
+      }
+    }
+  }
+
+  Future<void> removeItem(String productId) async {
+    if (_userId == null || !_items.containsKey(productId)) return;
+    await _db
+        .collection('carts')
+        .doc(_userId)
+        .collection('items')
+        .doc(productId)
+        .delete();
+  }
+
+  Future<void> clear() async {
+    if (_userId == null) return;
+
+    final batch = _db.batch();
+    final snapshot =
+        await _db.collection('carts').doc(_userId).collection('items').get();
+    for (var doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
+
+  Future<void> updateItemQuantity(String productId, double newQuantity) async {
+    if (_userId == null || !_items.containsKey(productId)) return;
+
+    final cartItemRef =
+        _db.collection('carts').doc(_userId).collection('items').doc(productId);
 
     if (newQuantity > 0) {
-      _items.update(productId, (item) {
-        return item.copyWith(
-          quantity: newQuantity,
-          // Recalculate totalPrice only for volumetric items
-          totalPrice: item.unit == 'Lt' ? (item.price * newQuantity) : null,
-        );
+      final item = _items[productId]!;
+      await cartItemRef.update({
+        'quantity': newQuantity,
+        'totalPrice': item.unit == 'Lt' ? (item.price * newQuantity) : null,
       });
     } else {
-      _items.remove(productId);
+      await cartItemRef.delete();
     }
-    notifyListeners();
-  }
-
-  void removeItem(String productId) {
-    _items.remove(productId);
-    notifyListeners();
-  }
-
-  void clear() {
-    _items = {};
-    notifyListeners();
   }
 }

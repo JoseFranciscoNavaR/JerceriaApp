@@ -1,51 +1,62 @@
-import 'package:hive/hive.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/product_model.dart';
 import '../models/category_model.dart';
+import '../models/order_model.dart' as model;
 
 class DatabaseService {
-  // Boxes for data storage
-  final Box<Product> _productBox = Hive.box<Product>('products');
-  final Box<Category> _categoryBox = Hive.box<Category>('categories');
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // Product-related methods
-  List<Product> getProducts() {
-    return _productBox.values.toList();
+  Stream<List<Product>> getProducts() {
+    return _db.collection('products').snapshots().map((snapshot) =>
+        snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList());
   }
 
   Future<void> addProduct(Product product) async {
-    await _productBox.put(product.id, product);
+    await _db.collection('products').add(product.toMap());
   }
 
   Future<void> updateProduct(Product product) async {
-    await _productBox.put(product.id, product);
+    await _db.collection('products').doc(product.id).update(product.toMap());
   }
 
   Future<void> deleteProduct(String productId) async {
-    await _productBox.delete(productId);
+    await _db.collection('products').doc(productId).delete();
   }
 
   // Category-related methods
-  List<Category> getCategories() {
-    return _categoryBox.values.toList();
+  Stream<List<Category>> getCategories() {
+    return _db.collection('categories').snapshots().map((snapshot) =>
+        snapshot.docs.map((doc) => Category.fromFirestore(doc)).toList());
   }
 
   Future<void> addCategory(Category category) async {
-    await _categoryBox.put(category.id, category);
+    await _db.collection('categories').add(category.toMap());
   }
 
   Future<void> updateCategory(Category category) async {
-    await _categoryBox.put(category.id, category);
+    await _db.collection('categories').doc(category.id).update(category.toMap());
   }
 
   Future<void> updateCategoryAvailability(String categoryId, bool isAvailable) async {
-    final category = _categoryBox.get(categoryId);
-    if (category != null) {
-      category.isAvailable = isAvailable;
-      await _categoryBox.put(categoryId, category);
-    }
+    await _db.collection('categories').doc(categoryId).update({'isAvailable': isAvailable});
   }
 
   Future<void> deleteCategory(String categoryId) async {
-    await _categoryBox.delete(categoryId);
+    await _db.collection('categories').doc(categoryId).delete();
+  }
+
+  // Order-related methods
+  Stream<List<model.Order>> getOrders() {
+    return _db.collection('orders').snapshots().map((snapshot) =>
+        snapshot.docs.map((doc) => model.Order.fromFirestore(doc)).toList());
+  }
+  
+  Future<void> addOrder(model.Order order) async {
+    await _db.collection('orders').add(order.toJson());
+  }
+
+  Future<void> updateOrder(model.Order order) async {
+    await _db.collection('orders').doc(order.id).update(order.toJson());
   }
 }

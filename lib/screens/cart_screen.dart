@@ -67,6 +67,7 @@ class CartScreen extends StatelessWidget {
                 Text(
                   'Inicia sesión para ver tu carrito',
                   style: TextStyle(fontSize: 22, color: Colors.grey[600], fontWeight: FontWeight.w300),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(

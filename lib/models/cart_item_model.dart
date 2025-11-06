@@ -5,7 +5,7 @@ class CartItem {
   final double price;
   final String imageUrl;
   final String unit;
-  final double? totalPrice; // Add this line
+  final double? totalPrice;
 
   CartItem({
     required this.id,
@@ -14,7 +14,7 @@ class CartItem {
     required this.price,
     required this.imageUrl,
     required this.unit,
-    this.totalPrice, // Add this line
+    this.totalPrice,
   });
 
   CartItem copyWith({
@@ -28,7 +28,31 @@ class CartItem {
       imageUrl: imageUrl,
       unit: unit,
       quantity: quantity ?? this.quantity,
-      totalPrice: totalPrice ?? this.totalPrice, // Add this line
+      totalPrice: totalPrice ?? this.totalPrice,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'quantity': quantity,
+      'price': price,
+      'imageUrl': imageUrl,
+      'unit': unit,
+      'totalPrice': totalPrice,
+    };
+  }
+
+  factory CartItem.fromJson(Map<String, dynamic> json) {
+    return CartItem(
+      id: json['id'],
+      name: json['name'],
+      quantity: json['quantity'],
+      price: json['price'],
+      imageUrl: json['imageUrl'],
+      unit: json['unit'],
+      totalPrice: json['totalPrice'],
     );
   }
 }
