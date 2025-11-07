@@ -5,6 +5,7 @@ import 'package:badges/badges.dart' as badges;
 import '../models/product_model.dart';
 import '../providers/cart_provider.dart';
 import '../providers/navigation_provider.dart';
+import '../providers/auth_provider.dart';
 
 // Enum to manage which input field is active
 enum VolumetricInputMode { liters, pesos }
@@ -177,6 +178,9 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final bool isLoggedIn = authProvider.user != null;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -186,7 +190,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
           _buildFloatingActions(context),
         ],
       ),
-      bottomNavigationBar: _buildResponsiveBottomActionBar(context),
+      bottomNavigationBar: _buildResponsiveBottomActionBar(context, isLoggedIn),
     );
   }
 
@@ -489,22 +493,22 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  Widget _buildResponsiveBottomActionBar(BuildContext context) {
+  Widget _buildResponsiveBottomActionBar(BuildContext context, bool isLoggedIn) {
     if (_isVolumetric) {
-      return _buildVolumetricBottomActionBar(context);
+      return _buildVolumetricBottomActionBar(context, isLoggedIn);
     }
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 400) {
-          return _buildCompactBottomActionBar(context);
+          return _buildCompactBottomActionBar(context, isLoggedIn);
         } else {
-          return _buildWideBottomActionBar(context);
+          return _buildWideBottomActionBar(context, isLoggedIn);
         }
       },
     );
   }
 
-  Widget _buildVolumetricBottomActionBar(BuildContext context) {
+  Widget _buildVolumetricBottomActionBar(BuildContext context, bool isLoggedIn) {
     final theme = Theme.of(context);
     final total = double.tryParse(_pesosController.text) ?? 0.0;
     
@@ -524,7 +528,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
       child: SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: _addToCart,
+              onPressed: isLoggedIn ? _addToCart : null,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 backgroundColor: theme.primaryColor,
@@ -532,14 +536,14 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
               ),
               icon: const Icon(Icons.add_shopping_cart, size: 20),
-              label: Text('Añadir (MX\$${total.toStringAsFixed(2)})'),
+              label: Text(isLoggedIn ? 'Añadir (MX\$${total.toStringAsFixed(2)})' : 'Inicia sesión para añadir'),
             ),
           ),
     );
   }
 
 
-  Widget _buildWideBottomActionBar(BuildContext context) {
+  Widget _buildWideBottomActionBar(BuildContext context, bool isLoggedIn) {
     final theme = Theme.of(context);
     final total = _quantity * widget.product.price;
     final String unitText = (_quantity == 1.0) ? 'Pieza' : 'Piezas';
@@ -561,7 +565,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
           const Spacer(),
           ElevatedButton.icon(
-            onPressed: _addToCart,
+            onPressed: isLoggedIn ? _addToCart : null,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               backgroundColor: theme.primaryColor,
@@ -569,14 +573,14 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
             ),
             icon: const Icon(Icons.add_shopping_cart, size: 20),
-            label: Text('Añadir (MX\$${total.toStringAsFixed(2)})'),
+            label: Text(isLoggedIn ? 'Añadir (MX\$${total.toStringAsFixed(2)})' : 'Inicia sesión para añadir'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCompactBottomActionBar(BuildContext context) {
+  Widget _buildCompactBottomActionBar(BuildContext context, bool isLoggedIn) {
     final theme = Theme.of(context);
     final total = _quantity * widget.product.price;
     final String unitText = (_quantity == 1.0) ? 'Pieza' : 'Piezas';
@@ -604,7 +608,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: _addToCart,
+              onPressed: isLoggedIn ? _addToCart : null,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 backgroundColor: theme.primaryColor,
@@ -612,7 +616,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
               ),
               icon: const Icon(Icons.add_shopping_cart, size: 20),
-              label: Text('Añadir (MX\$${total.toStringAsFixed(2)})'),
+              label: Text(isLoggedIn ? 'Añadir (MX\$${total.toStringAsFixed(2)})' : 'Inicia sesión para añadir'),
             ),
           ),
         ],
