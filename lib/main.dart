@@ -6,7 +6,7 @@ import 'screens/home_screen.dart';
 import 'providers/cart_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/order_provider.dart';
-import 'providers/auth_provider.dart' as app_auth_provider;
+import 'providers/auth_provider.dart';
 import 'generated/app_localizations.dart';
 
 void main() async {
@@ -14,8 +14,27 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Envuelve la app en los providers.
+  runApp(const AppProviders());
+}
 
-  runApp(const MyApp());
+// Widget que contiene todos los providers de la aplicación.
+class AppProviders extends StatelessWidget {
+  const AppProviders({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProvider(create: (_) => OrderProvider()),
+      ],
+      child: const MyApp(),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -23,27 +42,23 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (ctx) => app_auth_provider.AuthProvider()),
-        ChangeNotifierProvider(create: (ctx) => CartProvider()),
-        ChangeNotifierProvider(create: (ctx) => NavigationProvider()),
-        ChangeNotifierProvider(create: (ctx) => OrderProvider()),
-      ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
-        theme: ThemeData(
-          primarySwatch: Colors.teal,
-          colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.teal).copyWith(
-            secondary: Colors.amber,
-          ),
-          visualDensity: VisualDensity.adaptivePlatformDensity,
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+      theme: ThemeData(
+        primarySwatch: Colors.teal,
+        colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.teal).copyWith(
+          secondary: Colors.amber,
         ),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: const AuthWrapper(),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      // Usa un Builder para asegurar que el context está por debajo de MaterialApp
+      home: Builder(builder: (context) {
+        // Ahora, el context que se usa aquí puede ver los providers.
+        return const AuthWrapper();
+      }),
     );
   }
 }
@@ -60,7 +75,7 @@ class AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<app_auth_provider.AuthProvider>(
+    return Consumer<AuthProvider>(
       builder: (context, auth, child) {
         if (auth.sessionExpired && !_isDialogShowing) {
           WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -15,8 +16,8 @@ class UserLoginScreen extends HookWidget {
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final email = useState('');
     final password = useState('');
-    final errorMessage = useState<String?>(null);
     final authProvider = Provider.of<AuthProvider>(context);
+    final l10n = AppLocalizations.of(context)!;
 
     Future<void> tryLogin() async {
       final isValid = formKey.currentState?.validate() ?? false;
@@ -25,38 +26,50 @@ class UserLoginScreen extends HookWidget {
       }
       formKey.currentState?.save();
 
-      if (email.value == 'admin' && password.value == 'admin') {
-        if (!context.mounted) return;
-        Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const AdminPanelScreen()),
-            (Route<dynamic> route) => false);
-        return;
-      }
-
       try {
         await authProvider.signInWithEmailAndPassword(email.value, password.value);
         if (!context.mounted) return;
-        Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-            (Route<dynamic> route) => false);
-      } catch (error) {
+
+        if (email.value == 'admin@jarceria.com') {
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const AdminPanelScreen()),
+              (Route<dynamic> route) => false);
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+              (Route<dynamic> route) => false);
+        }
+      } on FirebaseAuthException catch (e) {
         if (!context.mounted) return;
-        errorMessage.value = AppLocalizations.of(context)!.loginFailed;
+        String errorMessage;
+        if (e.code == 'user-not-found') {
+          errorMessage = l10n.userNotFound;
+        } else if (e.code == 'wrong-password') {
+          errorMessage = l10n.wrongPassword;
+        } else {
+          errorMessage = l10n.loginFailed;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage.value!),
+            content: Text(errorMessage),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      } catch (error) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.loginFailed),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
     }
 
-    final l10n = AppLocalizations.of(context)!;
-
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Acceso de Usuario', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Acceso', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -96,7 +109,7 @@ class UserLoginScreen extends HookWidget {
                       TextFormField(
                         key: const ValueKey('email'),
                         validator: (value) {
-                          if (value != 'admin' && (value == null || !value.contains('@'))) {
+                          if (value == null || !value.contains('@')) {
                             return l10n.invalidEmail;
                           }
                           return null;
@@ -120,7 +133,7 @@ class UserLoginScreen extends HookWidget {
                       TextFormField(
                         key: const ValueKey('password'),
                         validator: (value) {
-                           if (value != 'admin' && (value == null || value.length < 7)) {
+                           if (value == null || value.length < 6) {
                             return l10n.passwordTooShort;
                           }
                           return null;

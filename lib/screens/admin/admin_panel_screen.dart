@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../home_screen.dart';
+import 'package:jarceria_app/services/auth_service.dart';
+import 'package:jarceria_app/screens/home_screen.dart';
 import './admin_product_list_screen.dart';
-import './admin_category_list_screen.dart'; 
+import './admin_category_list_screen.dart';
 import './admin_order_list_screen.dart';
 
 class AdminPanelScreen extends StatelessWidget {
@@ -9,6 +10,7 @@ class AdminPanelScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authService = AuthService();
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -17,13 +19,13 @@ class AdminPanelScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: Theme.of(context).colorScheme.primary,
-        automaticallyImplyLeading: false, // No muestra la flecha de regreso
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_outlined),
             tooltip: 'Cerrar Sesión',
-            onPressed: () {
-              // Regresa a la pantalla de inicio y limpia el historial de navegación
+            onPressed: () async {
+              await authService.signOut();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => const HomeScreen()),
                 (Route<dynamic> route) => false,
@@ -52,7 +54,6 @@ class AdminPanelScreen extends StatelessWidget {
             title: 'Administrar Categorías',
             subtitle: 'Organizar productos en categorías',
             onTap: () {
-              // Navigate to the new category list screen
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (ctx) => const AdminCategoryListScreen()),
               );

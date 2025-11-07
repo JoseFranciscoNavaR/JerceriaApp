@@ -24,10 +24,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidEmail => 'Please enter a valid email address.';
 
   @override
-  String get passwordTooShort => 'Password must be at least 7 characters long.';
+  String get passwordTooShort => 'Password must be at least 6 characters long.';
 
   @override
   String get loginFailed => 'Login failed. Please check your credentials.';
+
+  @override
+  String get userNotFound => 'No user found with that email.';
+
+  @override
+  String get wrongPassword => 'The password provided is incorrect.';
 
   @override
   String get createNewAccount => 'Create a new account';

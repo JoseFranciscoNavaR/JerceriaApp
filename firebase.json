@@ -1,1 +1,28 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"jarceriaapp","appId":"1:768200284790:android:a3c3317987927f428b1d57","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"jarceriaapp","configurations":{"android":"1:768200284790:android:a3c3317987927f428b1d57","ios":"1:768200284790:ios:c122f4a32793c3888b1d57","macos":"1:768200284790:ios:c122f4a32793c3888b1d57","web":"1:768200284790:web:cbfb4ba9e4ba08668b1d57","windows":"1:768200284790:web:eee25c3cccdc6e108b1d57"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "jarceriaapp",
+          "appId": "1:768200284790:android:a3c3317987927f428b1d57",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "jarceriaapp",
+          "configurations": {
+            "android": "1:768200284790:android:a3c3317987927f428b1d57",
+            "ios": "1:768200284790:ios:c122f4a32793c3888b1d57",
+            "macos": "1:768200284790:ios:c122f4a32793c3888b1d57",
+            "web": "1:768200284790:web:cbfb4ba9e4ba08668b1d57",
+            "windows": "1:768200284790:web:eee25c3cccdc6e108b1d57"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

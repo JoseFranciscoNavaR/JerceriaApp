@@ -2,9 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:jarceria_app/models/category_model.dart';
+import 'package:jarceria_app/services/database_service.dart';
 import '../../models/product_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminEditProductScreen extends StatefulWidget {
   final Product? product;
@@ -17,6 +18,7 @@ class AdminEditProductScreen extends StatefulWidget {
 
 class AdminEditProductScreenState extends State<AdminEditProductScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _dbService = DatabaseService();
   final _nameController = TextEditingController();
   final _brandController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -107,24 +109,22 @@ class AdminEditProductScreenState extends State<AdminEditProductScreen> {
     }
 
     try {
-      final productData = {
-        'name': _nameController.text,
-        'brand': _brandController.text.isNotEmpty ? _brandController.text : null,
-        'categoryId': _selectedCategoryId!,
-        'description': _descriptionController.text,
-        'price': double.parse(_priceController.text),
-        'imageUrl': finalImageUrl,
-        'unit': _isSoldByVolume ? 'Lt' : 'Pz',
-        'isAvailable': _isAvailable,
-      };
+      final product = Product(
+        id: widget.product?.id ?? '',
+        name: _nameController.text,
+        brand: _brandController.text.isNotEmpty ? _brandController.text : null,
+        categoryId: _selectedCategoryId!,
+        description: _descriptionController.text,
+        price: double.parse(_priceController.text),
+        imageUrl: finalImageUrl!,
+        unit: _isSoldByVolume ? 'Lt' : 'Pz',
+        isAvailable: _isAvailable,
+      );
 
       if (widget.product == null) {
-        await FirebaseFirestore.instance.collection('products').add(productData);
+        await _dbService.addProduct(product);
       } else {
-        await FirebaseFirestore.instance
-            .collection('products')
-            .doc(widget.product!.id)
-            .update(productData);
+        await _dbService.updateProduct(product);
       }
       Navigator.of(context).pop();
     } catch (error) {
@@ -379,5 +379,4 @@ class AdminEditProductScreenState extends State<AdminEditProductScreen> {
                 ),
     );
   }
-
 }

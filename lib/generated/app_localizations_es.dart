@@ -26,11 +26,18 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get passwordTooShort =>
-      'La contraseña debe tener al menos 7 caracteres.';
+      'La contraseña debe tener al menos 6 caracteres.';
 
   @override
   String get loginFailed =>
       'No se pudo iniciar sesión. Por favor, comprueba tus credenciales.';
+
+  @override
+  String get userNotFound =>
+      'No se encontró ningún usuario con ese correo electrónico.';
+
+  @override
+  String get wrongPassword => 'La contraseña proporcionada es incorrecta.';
 
   @override
   String get createNewAccount => 'Crear una nueva cuenta';

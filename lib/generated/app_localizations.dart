@@ -131,7 +131,7 @@ abstract class AppLocalizations {
   /// No description provided for @passwordTooShort.
   ///
   /// In en, this message translates to:
-  /// **'Password must be at least 7 characters long.'**
+  /// **'Password must be at least 6 characters long.'**
   String get passwordTooShort;
 
   /// No description provided for @loginFailed.
@@ -139,6 +139,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Login failed. Please check your credentials.'**
   String get loginFailed;
+
+  /// No description provided for @userNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No user found with that email.'**
+  String get userNotFound;
+
+  /// No description provided for @wrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'The password provided is incorrect.'**
+  String get wrongPassword;
 
   /// No description provided for @createNewAccount.
   ///

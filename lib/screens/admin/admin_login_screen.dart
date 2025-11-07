@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:jarceria_app/services/auth_service.dart';
 import './admin_panel_screen.dart';
 
 class AdminLoginScreen extends StatefulWidget {
@@ -11,25 +12,33 @@ class AdminLoginScreen extends StatefulWidget {
 
 class AdminLoginScreenState extends State<AdminLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _username = '';
+  final _authService = AuthService();
+  String _email = '';
   String _password = '';
+  bool _isLoading = false;
 
-  void _tryLogin() {
+  Future<void> _tryLogin() async {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (isValid) {
       _formKey.currentState?.save();
+      setState(() => _isLoading = true);
 
-      if (_username == 'admin' && _password == 'admin') {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const AdminPanelScreen()),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Usuario o contraseña incorrectos'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+      final userCredential = await _authService.signInWithEmailAndPassword(_email, _password);
+
+      if (mounted) {
+          setState(() => _isLoading = false);
+          if (userCredential != null) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const AdminPanelScreen()),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Correo electrónico o contraseña incorrectos.'),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          }
       }
     }
   }
@@ -77,19 +86,20 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
                       ),
                       const SizedBox(height: 30),
                       TextFormField(
-                        key: const ValueKey('username'),
+                        key: const ValueKey('email'),
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor, ingrese un usuario.';
+                          if (value == null || !value.contains('@')) {
+                            return 'Por favor, ingrese un correo electrónico válido.';
                           }
                           return null;
                         },
                         onSaved: (value) {
-                          _username = value!;
+                          _email = value!;
                         },
+                        keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          hintText: 'Usuario',
-                          prefixIcon: const Icon(Icons.person_outline, color: Colors.grey),
+                          hintText: 'Correo electrónico',
+                          prefixIcon: const Icon(Icons.email_outlined, color: Colors.grey),
                           filled: true,
                           fillColor: Colors.white,
                           border: OutlineInputBorder(
@@ -102,8 +112,8 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
                       TextFormField(
                         key: const ValueKey('password'),
                         validator: (value) {
-                          if (value == null || value.length < 5) {
-                            return 'La contraseña debe tener al menos 5 caracteres.';
+                          if (value == null || value.length < 6) {
+                            return 'La contraseña debe tener al menos 6 caracteres.';
                           }
                           return null;
                         },
@@ -126,7 +136,7 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _tryLogin,
+                          onPressed: _isLoading ? null : _tryLogin,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Theme.of(context).colorScheme.primary,
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -134,10 +144,12 @@ class AdminLoginScreenState extends State<AdminLoginScreen> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          child: const Text(
-                            'Iniciar Sesión',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
-                          ),
+                          child: _isLoading
+                              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white))
+                              : const Text(
+                                  'Iniciar Sesión',
+                                  style: TextStyle(fontSize: 18, color: Colors.white),
+                                ),
                         ),
                       ),
                     ],
